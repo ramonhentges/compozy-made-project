@@ -52,8 +52,8 @@ describe('User', () => {
       expect(events).toHaveLength(1);
       expect(events[0]).toBeInstanceOf(UserRegisteredEvent);
       const registeredEvent = events[0] as UserRegisteredEvent;
-      expect(registeredEvent.userId.value).toBe(validUserId);
-      expect(registeredEvent.email.value).toBe(validEmail);
+      expect(registeredEvent.aggregateId).toBe(validUserId);
+      expect(registeredEvent.data.email).toBe(validEmail);
     });
 
     it('should not have events after pulling them', () => {

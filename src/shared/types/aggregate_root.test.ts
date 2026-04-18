@@ -1,14 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import { AggregateRoot, DomainEvent } from './index';
 
-class TestAggregateCreated implements DomainEvent {
+interface TestAggregateCreatedData {
+  name: string;
+}
+
+class TestAggregateCreated implements DomainEvent<TestAggregateCreatedData> {
   readonly eventName = 'TestAggregateCreated';
   readonly occurredOn: Date;
+  readonly aggregateId: string;
+  readonly version = 1;
+  readonly data: TestAggregateCreatedData;
 
   constructor(
     public readonly aggregateId: string,
     public readonly name: string
   ) {
+    this.aggregateId = aggregateId;
+    this.data = { name };
     this.occurredOn = new Date();
   }
 }
