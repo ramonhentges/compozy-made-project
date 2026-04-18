@@ -1,0 +1,37 @@
+{
+  "name": "ddd-clean-arch-hexagonal",
+  "version": "1.0.0",
+  "description": "DDD + Clean Architecture + Hexagonal Architecture backend",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "dev": "ts-node -r tsconfig-paths/register src/main/index.ts",
+    "build": "tsc",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "ddd",
+    "clean-architecture",
+    "hexagonal",
+    "fastify",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "fastify": "^4.28.1",
+    "jsonwebtoken": "^9.0.2",
+    "pg-promise": "^11.9.1"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.14.9",
+    "@vitest/coverage-v8": "^1.6.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
