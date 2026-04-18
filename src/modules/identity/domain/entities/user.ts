@@ -6,7 +6,7 @@ import { UserRegisteredEvent } from '../events/user_registered';
 import { PasswordChangedEvent } from '../events/password_changed';
 
 export class User extends AggregateRoot<UserId> {
-  private constructor(
+  public constructor(
     id: UserId,
     private readonly _email: Email,
     private _password: Password,

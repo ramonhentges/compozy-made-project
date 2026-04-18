@@ -7,7 +7,7 @@ export class InvalidEmailError extends DomainError {
 }
 
 export class Email {
-  private constructor(private readonly _value: string) {}
+  public constructor(private readonly _value: string) {}
 
   static create(value: string): Email {
     if (!Email.isValid(value)) {

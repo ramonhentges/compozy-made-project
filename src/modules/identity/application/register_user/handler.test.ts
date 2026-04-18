@@ -2,17 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RegisterUserHandler, DuplicateEmailError, InvalidPasswordError } from './handler';
 import { IUserRepository } from '../../domain/repository/user_repository';
 import { IPasswordHasher } from '../../domain/services/password_hasher';
-import { UserId } from '../../domain/value_objects/user_id';
 
 describe('RegisterUserHandler', () => {
-  const mockUserId = '550e8400-e29b-41d4-a716-446655440000';
   const validEmail = 'test@example.com';
   const validPassword = 'Password123!';
   const hashedPassword = '$2b$12$hashedpassword1234567890123456789012';
 
   let mockUserRepository: IUserRepository;
   let mockPasswordHasher: IPasswordHasher;
-  let mockGenerateUserId: () => UserId;
   let handler: RegisterUserHandler;
 
   beforeEach(() => {
@@ -29,12 +26,9 @@ describe('RegisterUserHandler', () => {
       verify: vi.fn(),
     };
 
-    mockGenerateUserId = vi.fn().mockReturnValue(UserId.create(mockUserId));
-
     handler = new RegisterUserHandler({
       userRepository: mockUserRepository,
       passwordHasher: mockPasswordHasher,
-      generateUserId: mockGenerateUserId,
     });
   });
 
@@ -48,7 +42,7 @@ describe('RegisterUserHandler', () => {
       expect(mockPasswordHasher.hash).toHaveBeenCalledWith(validPassword);
       expect(mockUserRepository.save).toHaveBeenCalledTimes(1);
       expect(result.email).toBe(validEmail);
-      expect(result.userId).toBe(mockUserId);
+      expect(result.userId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
     });
 
     it('should reject duplicate email', async () => {

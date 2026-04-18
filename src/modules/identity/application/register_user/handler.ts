@@ -23,18 +23,15 @@ export class InvalidPasswordError extends Error {
 export interface RegisterUserDeps {
   userRepository: IUserRepository;
   passwordHasher: IPasswordHasher;
-  generateUserId: () => UserId;
 }
 
 export class RegisterUserHandler implements IRegisterUserUseCase {
   private readonly userRepository: IUserRepository;
   private readonly passwordHasher: IPasswordHasher;
-  private readonly generateUserId: () => UserId;
 
   constructor(deps: RegisterUserDeps) {
     this.userRepository = deps.userRepository;
     this.passwordHasher = deps.passwordHasher;
-    this.generateUserId = deps.generateUserId;
   }
 
   private isValidPassword(password: string): boolean {
@@ -68,7 +65,7 @@ export class RegisterUserHandler implements IRegisterUserUseCase {
       throw new DuplicateEmailError(command.email);
     }
 
-    const userId = this.generateUserId();
+    const userId = UserId.create();
     const passwordHash = await this.passwordHasher.hash(command.password);
 
     const user = User.create(userId, email, passwordHash);

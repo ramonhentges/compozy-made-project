@@ -1,3 +1,4 @@
+import { generateUuid } from '../../../../shared/utils/uuid_generator';
 import { DomainError } from '../../../../shared/errors/domain_error';
 
 export class InvalidUserIdError extends DomainError {
@@ -7,9 +8,14 @@ export class InvalidUserIdError extends DomainError {
 }
 
 export class UserId {
-  private constructor(private readonly _value: string) {}
+  public constructor(private readonly _value: string) {}
 
-  static create(value: string): UserId {
+  static create(): UserId;
+  static create(value: string): UserId;
+  static create(value?: string): UserId {
+    if (value === undefined) {
+      return new UserId(generateUuid());
+    }
     if (!UserId.isValid(value)) {
       throw new InvalidUserIdError(value);
     }

@@ -35,6 +35,19 @@ describe('Email', () => {
     });
   });
 
+  describe('public constructor', () => {
+    it('should accept valid parameters via constructor', () => {
+      const email = new Email('test@example.com');
+      expect(email.value).toBe('test@example.com');
+    });
+
+    it('should work with equals() for constructor-created instances', () => {
+      const email1 = new Email('test@example.com');
+      const email2 = new Email('test@example.com');
+      expect(email1.equals(email2)).toBe(true);
+    });
+  });
+
   describe('value', () => {
     it('should return the email value', () => {
       const email = Email.create('test@example.com');

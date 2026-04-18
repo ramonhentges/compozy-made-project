@@ -8,13 +8,8 @@ import { LoginUserHandler } from '@modules/identity/application/login_user/handl
 import { LogoutUserHandler } from '@modules/identity/application/logout_user/handler';
 import { identityRoutes } from '@modules/identity/infrastructure/http/routes';
 import { config } from '@config/index';
-import { UserId } from '@modules/identity/domain/value_objects/user_id';
 
 let server: FastifyInstance | null = null;
-
-function generateUserId(): UserId {
-  return UserId.create(crypto.randomUUID());
-}
 
 async function createServer(): Promise<FastifyInstance> {
   const db = createDatabase(config.database);
@@ -30,7 +25,6 @@ async function createServer(): Promise<FastifyInstance> {
   const registerUserHandler = new RegisterUserHandler({
     userRepository,
     passwordHasher,
-    generateUserId,
   });
 
   const loginUserHandler = new LoginUserHandler({

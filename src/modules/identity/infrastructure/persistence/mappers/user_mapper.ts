@@ -1,6 +1,7 @@
 import { User } from '../../../domain/entities/user';
 import { UserId } from '../../../domain/value_objects/user_id';
 import { Email } from '../../../domain/value_objects/email';
+import { Password } from '../../../domain/value_objects/password';
 
 export interface UserDTO {
   id: string;
@@ -12,9 +13,10 @@ export interface UserDTO {
 
 export class UserMapper {
   static toDomain(dto: UserDTO): User {
-    const userId = UserId.create(dto.id);
-    const email = Email.create(dto.email);
-    return User.create(userId, email, dto.password_hash);
+    const userId = new UserId(dto.id);
+    const email = new Email(dto.email);
+    const password = new Password(dto.password_hash);
+    return new User(userId, email, password, dto.created_at, dto.updated_at);
   }
 
   static toDTO(user: User): UserDTO {

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { User } from '../entities/user';
 import { Email } from '../value_objects/email';
+import { Password } from '../value_objects/password';
 import { UserId } from '../value_objects/user_id';
 import { UserRegisteredEvent } from '../events/user_registered';
 
@@ -8,6 +9,24 @@ describe('User', () => {
   const validUserId = '550e8400-e29b-41d4-a716-446655440000';
   const validEmail = 'test@example.com';
   const validPasswordHash = '$2b$12$hashedpassword1234567890123456789012';
+
+  describe('constructor', () => {
+    it('should create a user with valid parameters using public constructor', () => {
+      const userId = UserId.create(validUserId);
+      const email = Email.create(validEmail);
+      const password = Password.create(validPasswordHash);
+      const createdAt = new Date();
+      const updatedAt = new Date();
+
+      const user = new User(userId, email, password, createdAt, updatedAt);
+
+      expect(user.getId().value).toBe(validUserId);
+      expect(user.email.value).toBe(validEmail);
+      expect(user.password.hash).toBe(validPasswordHash);
+      expect(user.createdAt).toBe(createdAt);
+      expect(user.updatedAt).toBe(updatedAt);
+    });
+  });
 
   describe('create', () => {
     it('should create a user with correct properties', () => {

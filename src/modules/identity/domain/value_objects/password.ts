@@ -7,7 +7,7 @@ export class InvalidPasswordError extends DomainError {
 }
 
 export class Password {
-  private constructor(private readonly _hash: string) {}
+  public constructor(private readonly _hash: string) {}
 
   static create(hash: string): Password {
     if (!hash || hash.length === 0) {

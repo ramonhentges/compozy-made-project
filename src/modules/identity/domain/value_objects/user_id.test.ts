@@ -2,6 +2,26 @@ import { describe, it, expect } from 'vitest';
 import { UserId, InvalidUserIdError } from '../value_objects/user_id';
 
 describe('UserId', () => {
+  describe('create() - parameterless', () => {
+    it('should generate valid UUID v4', () => {
+      const id = UserId.create();
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      expect(id.value).toMatch(uuidRegex);
+    });
+
+    it('should generate unique UUIDs', () => {
+      const id1 = UserId.create();
+      const id2 = UserId.create();
+      expect(id1.value).not.toBe(id2.value);
+    });
+
+    it('should create UserId instance with generated value', () => {
+      const id = UserId.create();
+      expect(id.value).toBeTruthy();
+      expect(typeof id.value).toBe('string');
+    });
+  });
+
   describe('validation', () => {
     it('should accept valid UUID v4', () => {
       expect(() => UserId.create('550e8400-e29b-41d4-a716-446655440000')).not.toThrow();
