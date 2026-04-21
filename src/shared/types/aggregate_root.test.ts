@@ -8,14 +8,11 @@ interface TestAggregateCreatedData {
 class TestAggregateCreated implements DomainEvent<TestAggregateCreatedData> {
   readonly eventName = 'TestAggregateCreated';
   readonly occurredOn: Date;
-  readonly aggregateId: string;
   readonly version = 1;
   readonly data: TestAggregateCreatedData;
+  readonly aggregateId: string;
 
-  constructor(
-    public readonly aggregateId: string,
-    public readonly name: string
-  ) {
+  constructor(aggregateId: string, name: string) {
     this.aggregateId = aggregateId;
     this.data = { name };
     this.occurredOn = new Date();

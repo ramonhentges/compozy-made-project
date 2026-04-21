@@ -42,6 +42,6 @@ export class User extends AggregateRoot<UserId> {
   changePassword(newHash: string): void {
     this._password = Password.create(newHash);
     this._updatedAt = new Date();
-    this.addDomainEvent(new PasswordChangedEvent(this.id, this._email));
+    this.addDomainEvent(new PasswordChangedEvent(this.id));
   }
 }

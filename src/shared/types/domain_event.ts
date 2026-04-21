@@ -1,4 +1,4 @@
-export interface DomainEvent<TData = Record<string, unknown>> {
+export interface DomainEvent<TData = unknown> {
   readonly eventName: string;
   readonly occurredOn: Date;
   readonly aggregateId: string;
