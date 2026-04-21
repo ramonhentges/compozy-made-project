@@ -12,7 +12,7 @@ import { config } from '@config/index';
 let server: FastifyInstance | null = null;
 
 async function createServer(): Promise<FastifyInstance> {
-  const db = createDatabase(config.database);
+  const db = createDatabase(config.identityDatabase);
 
   if (!config.jwt.secret || config.jwt.secret.length < 32) {
     throw new Error('JWT_SECRET must be at least 32 characters');

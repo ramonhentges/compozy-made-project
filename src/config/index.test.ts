@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { config, getRequiredEnv, parseDatabaseUrl } from './index';
+import { getRequiredEnv, parseDatabaseUrl } from './index';
 
 describe('config', () => {
   const originalEnv = { ...process.env };
@@ -49,12 +49,12 @@ describe('config', () => {
     it('should have all required fields when env vars set', async () => {
       vi.resetModules();
       process.env.JWT_SECRET = 'test-secret';
-      process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       
       const { config: freshConfig } = await import('./index');
       
       expect(freshConfig.port).toBe(3000);
-      expect(freshConfig.database.host).toBe('localhost');
+      expect(freshConfig.identityDatabase.host).toBe('localhost');
       expect(freshConfig.jwt.secret).toBe('test-secret');
       expect(freshConfig.bcrypt.rounds).toBe(12);
     });

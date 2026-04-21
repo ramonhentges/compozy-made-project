@@ -1,12 +1,11 @@
+import {
+  IdentityDatabaseConfig,
+  identityDbConfig,
+} from "./databases/identity_context";
+
 export interface AppConfig {
   port: number;
-  database: {
-    host: string;
-    port: number;
-    database: string;
-    user: string;
-    password: string;
-  };
+  identityDatabase: IdentityDatabaseConfig;
   jwt: {
     secret: string;
     accessExpiry: string;
@@ -17,6 +16,8 @@ export interface AppConfig {
   };
 }
 
+import { parsePostgresUrl } from "./utils/postgres-url";
+
 export function getRequiredEnv(name: string, fallback?: string): string {
   const value = process.env[name] ?? fallback;
   if (!value) {
@@ -25,37 +26,21 @@ export function getRequiredEnv(name: string, fallback?: string): string {
   return value;
 }
 
-export function parseDatabaseUrl(url: string): {
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password: string;
-} {
-  const match = url.match(/^postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/);
-  if (!match) {
-    throw new Error(`Invalid DATABASE_URL format: ${url}`);
-  }
-  return {
-    user: match[1],
-    password: match[2],
-    host: match[3],
-    port: parseInt(match[4], 10),
-    database: match[5],
-  };
+export function parseDatabaseUrl(
+  url: string,
+): ReturnType<typeof parsePostgresUrl> {
+  return parsePostgresUrl(url);
 }
 
 export const config: AppConfig = {
-  port: parseInt(process.env.PORT ?? '3000', 10),
-  database: parseDatabaseUrl(
-    getRequiredEnv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/app')
-  ),
+  port: parseInt(process.env.PORT ?? "3000", 10),
+  identityDatabase: identityDbConfig,
   jwt: {
-    secret: getRequiredEnv('JWT_SECRET', 'dev-secret-do-not-use-in-production'),
-    accessExpiry: process.env.JWT_ACCESS_EXPIRY ?? '15m',
-    refreshExpiry: process.env.JWT_REFRESH_EXPIRY ?? '7d',
+    secret: getRequiredEnv("JWT_SECRET", "dev-secret-do-not-use-in-production"),
+    accessExpiry: process.env.JWT_ACCESS_EXPIRY ?? "15m",
+    refreshExpiry: process.env.JWT_REFRESH_EXPIRY ?? "7d",
   },
   bcrypt: {
-    rounds: parseInt(process.env.BCRYPT_ROUNDS ?? '12', 10),
+    rounds: parseInt(process.env.BCRYPT_ROUNDS ?? "12", 10),
   },
 };
