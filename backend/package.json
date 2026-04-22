@@ -8,7 +8,7 @@
     "build": "tsc",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "migrate:identity_context": "ts-node -r tsconfig-paths/register scripts/migrate.ts",
+    "migrate:identity_context": "ts-node -r tsconfig-paths/register src/scripts/migrate.ts",
     "migrate:identity_context:up": "npm run migrate:identity_context -- up",
     "migrate:identity_context:down": "npm run migrate:identity_context -- down"
   },
