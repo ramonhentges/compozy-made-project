@@ -45,6 +45,200 @@ describe('config', () => {
     });
   });
 
+  describe('kafka config', () => {
+    const originalEnv = { ...process.env };
+
+    beforeEach(() => {
+      process.env = { ...originalEnv };
+    });
+
+    afterEach(() => {
+      process.env = originalEnv;
+      vi.resetModules();
+    });
+
+    it('should have default Kafka brokers', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.kafka.brokers).toEqual(['localhost:9092']);
+    });
+
+    it('should parse KAFKA_BROKERS as comma-separated list', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+      process.env.KAFKA_BROKERS = 'broker1:9092, broker2:9092 , broker3:9092';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.kafka.brokers).toEqual(['broker1:9092', 'broker2:9092', 'broker3:9092']);
+    });
+
+    it('should use default Kafka client ID', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.kafka.clientId).toBe('identity-service');
+    });
+
+    it('should use KAFKA_CLIENT_ID env variable', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+      process.env.KAFKA_CLIENT_ID = 'custom-client-id';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.kafka.clientId).toBe('custom-client-id');
+    });
+
+    it('should use default identity outbox topic', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.kafka.identityOutboxTopic).toBe('identity-outbox');
+    });
+
+    it('should use IDENTITY_OUTBOX_TOPIC env variable', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+      process.env.IDENTITY_OUTBOX_TOPIC = 'custom-topic';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.kafka.identityOutboxTopic).toBe('custom-topic');
+    });
+  });
+
+  describe('outbox relay config', () => {
+    const originalEnv = { ...process.env };
+
+    beforeEach(() => {
+      process.env = { ...originalEnv };
+    });
+
+    afterEach(() => {
+      process.env = originalEnv;
+      vi.resetModules();
+    });
+
+    it('should have default relay poll interval', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.outboxRelay.pollIntervalMs).toBe(1000);
+    });
+
+    it('should use OUTBOX_RELAY_POLL_INTERVAL_MS env variable', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+      process.env.OUTBOX_RELAY_POLL_INTERVAL_MS = '2000';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.outboxRelay.pollIntervalMs).toBe(2000);
+    });
+
+    it('should have default relay batch size', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.outboxRelay.batchSize).toBe(100);
+    });
+
+    it('should use OUTBOX_RELAY_BATCH_SIZE env variable', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+      process.env.OUTBOX_RELAY_BATCH_SIZE = '50';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.outboxRelay.batchSize).toBe(50);
+    });
+
+    it('should have default relay max attempts', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.outboxRelay.maxAttempts).toBe(5);
+    });
+
+    it('should use OUTBOX_RELAY_MAX_ATTEMPTS env variable', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+      process.env.OUTBOX_RELAY_MAX_ATTEMPTS = '10';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.outboxRelay.maxAttempts).toBe(10);
+    });
+
+    it('should have default relay backoff base', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.outboxRelay.backoffBaseMs).toBe(1000);
+    });
+
+    it('should use OUTBOX_RELAY_BACKOFF_BASE_MS env variable', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+      process.env.OUTBOX_RELAY_BACKOFF_BASE_MS = '500';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.outboxRelay.backoffBaseMs).toBe(500);
+    });
+
+    it('should have default relay backoff max', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.outboxRelay.backoffMaxMs).toBe(60000);
+    });
+
+    it('should use OUTBOX_RELAY_BACKOFF_MAX_MS env variable', async () => {
+      vi.resetModules();
+      process.env.JWT_SECRET = 'test-secret';
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+      process.env.OUTBOX_RELAY_BACKOFF_MAX_MS = '300000';
+
+      const { config: freshConfig } = await import('./index');
+
+      expect(freshConfig.outboxRelay.backoffMaxMs).toBe(300000);
+    });
+  });
+
   describe('config structure', () => {
     it('should have all required fields when env vars set', async () => {
       vi.resetModules();
