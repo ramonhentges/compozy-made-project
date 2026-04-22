@@ -1,88 +1,37 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 
-const mockDb = {
-  oneOrNone: vi.fn(),
-  none: vi.fn(),
-};
-
-vi.mock('@config/index', () => ({
-  config: {
-    port: 3001,
-    database: {
-      host: 'localhost',
-      port: 5432,
-      database: 'testdb',
-      user: 'testuser',
-      password: 'testpass',
-    },
-    jwt: {
-      secret: 'this-is-a-valid-test-secret-that-is-long-enough',
-      accessExpiry: '15m',
-      refreshExpiry: '7d',
-    },
-    bcrypt: {
-      rounds: 12,
-    },
-  },
-}));
-
-vi.mock('@modules/identity/infrastructure/persistence/config/db_config', () => ({
-  createDatabase: vi.fn(() => mockDb),
-  closeDatabase: vi.fn(),
-  getDatabase: vi.fn(() => mockDb),
-}));
-
-vi.mock('@modules/identity/infrastructure/adapters/jwt_adapter', () => ({
-  JwtAdapter: vi.fn().mockImplementation(() => ({
-    generateAccessToken: vi.fn(() => 'access-token'),
-    generateRefreshToken: vi.fn(() => 'refresh-token'),
-    verifyAccessToken: vi.fn(),
-    verifyRefreshToken: vi.fn(),
-  })),
-}));
-
-vi.mock('@modules/identity/infrastructure/adapters/bcrypt_adapter', () => ({
-  BcryptAdapter: vi.fn().mockImplementation(() => ({
-    hash: vi.fn(() => Promise.resolve('hashed')),
-    verify: vi.fn(() => Promise.resolve(true)),
-  })),
-}));
-
-vi.mock('@modules/identity/infrastructure/persistence/repositories/user_repository', () => ({
-  UserRepository: vi.fn().mockImplementation(() => ({
-    findByEmail: vi.fn(),
-    findById: vi.fn(),
-    save: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  })),
-}));
-
-vi.mock('@modules/identity/application/register_user/handler', () => ({
-  RegisterUserHandler: vi.fn().mockImplementation(() => ({
-    execute: vi.fn().mockResolvedValue({ userId: '123', email: 'test@test.com' }),
-  })),
-}));
-
-vi.mock('@modules/identity/application/login_user/handler', () => ({
-  LoginUserHandler: vi.fn().mockImplementation(() => ({
-    execute: vi.fn().mockResolvedValue({ accessToken: 'token', refreshToken: 'refresh' }),
-  })),
-}));
-
-vi.mock('@modules/identity/application/logout_user/handler', () => ({
-  LogoutUserHandler: vi.fn().mockImplementation(() => ({
-    execute: vi.fn().mockResolvedValue(undefined),
-  })),
-}));
-
-vi.mock('@modules/identity/infrastructure/http/routes', async () => {
-  const actual = await vi.importActual('@modules/identity/infrastructure/http/routes');
-  return {
-    ...actual,
-    identityRoutes: vi.fn((fastify, deps, done) => done()),
-  };
+vi.stubGlobal('process', {
+  ...process,
+  exit: vi.fn(),
+  on: vi.fn(),
 });
+
+vi.mock('@modules/identity/infrastructure/adapters/kafka_outbox_publisher', () => ({
+  KafkaOutboxPublisher: Object.assign(
+    vi.fn().mockImplementation(() => ({
+      connect: vi.fn().mockResolvedValue(undefined),
+      disconnect: vi.fn().mockResolvedValue(undefined),
+      publish: vi.fn().mockResolvedValue(undefined),
+      isConnected: vi.fn().mockReturnValue(true),
+    })),
+    {
+      fromAppConfig: vi.fn().mockReturnValue({
+        connect: vi.fn().mockResolvedValue(undefined),
+        disconnect: vi.fn().mockResolvedValue(undefined),
+        publish: vi.fn().mockResolvedValue(undefined),
+        isConnected: vi.fn().mockReturnValue(true),
+      }),
+    }
+  ),
+}));
+
+vi.mock('@modules/identity/infrastructure/relay/outbox_relay', () => ({
+  createOutboxRelay: vi.fn().mockReturnValue({
+    start: vi.fn(),
+    stop: vi.fn().mockResolvedValue(undefined),
+  }),
+  OutboxRelay: vi.fn(),
+}));
 
 describe('main', () => {
   describe('exports', () => {

@@ -3,6 +3,9 @@ import { createDatabase, closeDatabase } from '@modules/identity/infrastructure/
 import { JwtAdapter } from '@modules/identity/infrastructure/adapters/jwt_adapter';
 import { BcryptAdapter } from '@modules/identity/infrastructure/adapters/bcrypt_adapter';
 import { UserRepository } from '@modules/identity/infrastructure/persistence/repositories/user_repository';
+import { PgOutboxRepository } from '@modules/identity/infrastructure/persistence/repositories/outbox_repository';
+import { KafkaOutboxPublisher } from '@modules/identity/infrastructure/adapters/kafka_outbox_publisher';
+import { createOutboxRelay, OutboxRelay } from '@modules/identity/infrastructure/relay/outbox_relay';
 import { RegisterUserHandler } from '@modules/identity/application/register_user/handler';
 import { LoginUserHandler } from '@modules/identity/application/login_user/handler';
 import { LogoutUserHandler } from '@modules/identity/application/logout_user/handler';
@@ -10,6 +13,7 @@ import { identityRoutes } from '@modules/identity/infrastructure/http/routes';
 import { config } from '@config/index';
 
 let server: FastifyInstance | null = null;
+let relay: OutboxRelay | null = null;
 
 async function createServer(): Promise<FastifyInstance> {
   const db = createDatabase(config.identityDatabase);
@@ -19,6 +23,12 @@ async function createServer(): Promise<FastifyInstance> {
   }
 
   const userRepository = new UserRepository(db);
+  const outboxRepository = new PgOutboxRepository(db);
+  const kafkaPublisher = KafkaOutboxPublisher.fromAppConfig(config.kafka);
+  await kafkaPublisher.connect();
+
+  relay = createOutboxRelay(outboxRepository, kafkaPublisher, config.outboxRelay);
+
   const passwordHasher = new BcryptAdapter();
   const tokenService = new JwtAdapter({ secret: config.jwt.secret });
 
@@ -61,9 +71,17 @@ export async function startServer(): Promise<void> {
   const address = server.server.address();
   const port = typeof address === 'object' ? address?.port : config.port;
   server.log.info(`Server listening on port ${port}`);
+
+  if (relay) {
+    relay.start();
+  }
 }
 
 export async function stopServer(): Promise<void> {
+  if (relay) {
+    await relay.stop();
+    relay = null;
+  }
   if (server) {
     await server.close();
     closeDatabase();
