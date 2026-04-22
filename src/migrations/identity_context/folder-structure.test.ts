@@ -46,4 +46,26 @@ describe('Identity Context Migration Folder Structure', () => {
       expect(fs.accessSync(migrationsDir, fs.constants.R_OK)).toBeUndefined();
     });
   });
+
+  describe('Outbox migration discovery', () => {
+    it('should have outbox events up migration', () => {
+      const files = fs.readdirSync(migrationsDir);
+      const upMigration = files.find(f =>
+        f.includes('outbox_events') && !f.includes('down') && f.endsWith('.sql')
+      );
+
+      expect(upMigration).toBeDefined();
+      expect(upMigration).toMatch(/^\d{14}_outbox_events\.sql$/);
+    });
+
+    it('should have matching outbox events down migration', () => {
+      const files = fs.readdirSync(migrationsDir);
+      const downMigration = files.find(f =>
+        f.includes('outbox_events') && f.includes('down') && f.endsWith('.sql')
+      );
+
+      expect(downMigration).toBeDefined();
+      expect(downMigration).toMatch(/^\d{14}_outbox_events_down\.sql$/);
+    });
+  });
 });

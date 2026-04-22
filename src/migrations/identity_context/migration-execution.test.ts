@@ -7,6 +7,19 @@ describe('Migration Execution - Identity Context', () => {
   const packageJsonPath = path.resolve(process.cwd(), 'package.json');
   const originalEnv = { ...process.env };
 
+  const readMigration = (namePart: string, isDown = false): string => {
+    const files = fs.readdirSync(migrationsDir);
+    const migration = files.find(f =>
+      f.includes(namePart) &&
+      f.endsWith('.sql') &&
+      (isDown ? f.includes('down') : !f.includes('down'))
+    );
+
+    expect(migration).toBeDefined();
+
+    return fs.readFileSync(path.join(migrationsDir, migration as string), 'utf-8');
+  };
+
   beforeEach(() => {
     process.env = { ...originalEnv };
   });
@@ -104,6 +117,76 @@ describe('Migration Execution - Identity Context', () => {
       const files = fs.readdirSync(migrationsDir);
       const sqlFiles = files.filter(f => f.endsWith('.sql'));
       expect(sqlFiles.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should have outbox events up migration', () => {
+      const files = fs.readdirSync(migrationsDir);
+      const upMigration = files.find(f => f.includes('outbox_events') && !f.includes('down') && f.endsWith('.sql'));
+
+      expect(upMigration).toBeDefined();
+    });
+
+    it('should have outbox events down migration', () => {
+      const files = fs.readdirSync(migrationsDir);
+      const downMigration = files.find(f => f.includes('outbox_events') && f.includes('down') && f.endsWith('.sql'));
+
+      expect(downMigration).toBeDefined();
+    });
+  });
+
+  describe('Outbox migration SQL validation', () => {
+    it('should create events table for durable outbox records', () => {
+      const sql = readMigration('outbox_events');
+
+      expect(sql).toContain('CREATE TABLE IF NOT EXISTS events');
+    });
+
+    it('should define required event envelope columns', () => {
+      const sql = readMigration('outbox_events');
+
+      expect(sql).toContain('id uuid PRIMARY KEY');
+      expect(sql).toContain('event_name VARCHAR(255) NOT NULL');
+      expect(sql).toContain('event_version INTEGER NOT NULL');
+      expect(sql).toContain('aggregate_type VARCHAR(255) NOT NULL');
+      expect(sql).toContain('aggregate_id VARCHAR(255) NOT NULL');
+      expect(sql).toContain('payload JSONB NOT NULL');
+      expect(sql).toContain('occurred_on TIMESTAMP NOT NULL');
+    });
+
+    it('should define relay status and retry columns', () => {
+      const sql = readMigration('outbox_events');
+
+      expect(sql).toContain('status VARCHAR(32) NOT NULL');
+      expect(sql).toContain('attempts INTEGER NOT NULL DEFAULT 0');
+      expect(sql).toContain('next_attempt_at TIMESTAMP NOT NULL DEFAULT NOW()');
+      expect(sql).toContain('last_error TEXT NULL');
+      expect(sql).toContain('created_at TIMESTAMP NOT NULL DEFAULT NOW()');
+      expect(sql).toContain('processing_started_at TIMESTAMP NULL');
+      expect(sql).toContain('published_at TIMESTAMP NULL');
+    });
+
+    it('should constrain status to outbox relay states', () => {
+      const sql = readMigration('outbox_events');
+
+      expect(sql).toContain("CHECK (status IN ('pending', 'processing', 'published', 'failed'))");
+    });
+
+    it('should create polling, aggregate investigation, and event-type indexes', () => {
+      const sql = readMigration('outbox_events');
+
+      expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_events_status_next_attempt_at ON events(status, next_attempt_at)');
+      expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_events_aggregate ON events(aggregate_type, aggregate_id)');
+      expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_events_event_name_version ON events(event_name, event_version)');
+    });
+
+    it('rollback should drop outbox objects without dropping users table', () => {
+      const sql = readMigration('outbox_events', true);
+
+      expect(sql).toContain('DROP INDEX IF EXISTS idx_events_event_name_version');
+      expect(sql).toContain('DROP INDEX IF EXISTS idx_events_aggregate');
+      expect(sql).toContain('DROP INDEX IF EXISTS idx_events_status_next_attempt_at');
+      expect(sql).toContain('DROP TABLE IF EXISTS events');
+      expect(sql).not.toContain('DROP TABLE IF EXISTS users');
     });
   });
 
