@@ -8,7 +8,7 @@
     "build": "tsc",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "migrate:identity_context": "node -r ts-node -r tsconfig-paths/register -e \"const c = require('./src/config/databases/identity_context').identityDbConfig; Object.assign(process.env, { PGHOST: c.host, PGPORT: String(c.port), PGDATABASE: c.database, PGUSER: c.user, PGPASSWORD: c.password }); require('child_process').spawn('node-pg-migrate', process.argv.slice(2), { stdio: 'inherit', env: process.env })\" -- -d src/migrations/identity_context",
+    "migrate:identity_context": "ts-node -r tsconfig-paths/register scripts/migrate.ts",
     "migrate:identity_context:up": "npm run migrate:identity_context -- up",
     "migrate:identity_context:down": "npm run migrate:identity_context -- down"
   },

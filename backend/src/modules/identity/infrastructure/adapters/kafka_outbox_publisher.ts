@@ -1,7 +1,7 @@
-import { Kafka, Producer, ProducerRecord } from 'kafkajs';
-import { OutboxRecord } from '../persistence/types/outbox_record';
-import { OutboxPublisher } from './outbox_publisher';
-import { KafkaConfig } from '../../../../config';
+import { Kafka, Producer, ProducerRecord } from "kafkajs";
+import { OutboxRecord } from "../persistence/types/outbox_record";
+import { OutboxPublisher } from "./outbox_publisher";
+import { KafkaConfig } from "../../../../config";
 
 export interface KafkaPublisherConfig {
   brokers: string[];
@@ -60,7 +60,7 @@ export class KafkaOutboxPublisher implements OutboxPublisher {
     };
 
     const producerRecord: ProducerRecord = {
-      topic: this.topic,
+      topic: `${this.topic}.${record.eventName}`,
       messages: [
         {
           key: record.aggregateId,

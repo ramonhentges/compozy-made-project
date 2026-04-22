@@ -53,7 +53,10 @@ function parseKafkaBrokers(): string[] {
   if (!brokers) {
     return ["localhost:9092"];
   }
-  return brokers.split(",").map((b) => b.trim()).filter(Boolean);
+  return brokers
+    .split(",")
+    .map((b) => b.trim())
+    .filter(Boolean);
 }
 
 export const config: AppConfig = {
@@ -70,13 +73,23 @@ export const config: AppConfig = {
   kafka: {
     brokers: parseKafkaBrokers(),
     clientId: process.env.KAFKA_CLIENT_ID ?? "identity-service",
-    identityOutboxTopic: process.env.IDENTITY_OUTBOX_TOPIC ?? "identity-outbox",
+    identityOutboxTopic:
+      process.env.IDENTITY_OUTBOX_TOPIC ?? "com.test.identity",
   },
   outboxRelay: {
-    pollIntervalMs: parseInt(process.env.OUTBOX_RELAY_POLL_INTERVAL_MS ?? "1000", 10),
+    pollIntervalMs: parseInt(
+      process.env.OUTBOX_RELAY_POLL_INTERVAL_MS ?? "1000",
+      10,
+    ),
     batchSize: parseInt(process.env.OUTBOX_RELAY_BATCH_SIZE ?? "100", 10),
     maxAttempts: parseInt(process.env.OUTBOX_RELAY_MAX_ATTEMPTS ?? "5", 10),
-    backoffBaseMs: parseInt(process.env.OUTBOX_RELAY_BACKOFF_BASE_MS ?? "1000", 10),
-    backoffMaxMs: parseInt(process.env.OUTBOX_RELAY_BACKOFF_MAX_MS ?? "60000", 10),
+    backoffBaseMs: parseInt(
+      process.env.OUTBOX_RELAY_BACKOFF_BASE_MS ?? "1000",
+      10,
+    ),
+    backoffMaxMs: parseInt(
+      process.env.OUTBOX_RELAY_BACKOFF_MAX_MS ?? "60000",
+      10,
+    ),
   },
 };
