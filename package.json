@@ -28,14 +28,14 @@
     "kafkajs": "^2.2.4",
     "pino": "^9.0.0",
     "pino-pretty": "^11.0.0",
-    "pg-promise": "^11.9.1"
+    "pg-promise": "^11.9.1",
+    "node-pg-migrate": "^8.0.4"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.9",
     "@vitest/coverage-v8": "^1.6.1",
-    "node-pg-migrate": "^8.0.4",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.4.5",
