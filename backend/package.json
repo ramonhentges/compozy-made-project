@@ -1,0 +1,44 @@
+{
+  "name": "ddd-clean-arch-hexagonal",
+  "version": "1.0.0",
+  "description": "DDD + Clean Architecture + Hexagonal Architecture backend",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "dev": "ts-node -r tsconfig-paths/register src/main/index.ts",
+    "build": "tsc",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "migrate:identity_context": "node -r ts-node -r tsconfig-paths/register -e \"const c = require('./src/config/databases/identity_context').identityDbConfig; Object.assign(process.env, { PGHOST: c.host, PGPORT: String(c.port), PGDATABASE: c.database, PGUSER: c.user, PGPASSWORD: c.password }); require('child_process').spawn('node-pg-migrate', process.argv.slice(2), { stdio: 'inherit', env: process.env })\" -- -d src/migrations/identity_context",
+    "migrate:identity_context:up": "npm run migrate:identity_context -- up",
+    "migrate:identity_context:down": "npm run migrate:identity_context -- down"
+  },
+  "keywords": [
+    "ddd",
+    "clean-architecture",
+    "hexagonal",
+    "fastify",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "fastify": "^4.28.1",
+    "jsonwebtoken": "^9.0.2",
+    "kafkajs": "^2.2.4",
+    "pino": "^9.0.0",
+    "pino-pretty": "^11.0.0",
+    "pg-promise": "^11.9.1",
+    "node-pg-migrate": "^8.0.4"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.14.9",
+    "@vitest/coverage-v8": "^1.6.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
