@@ -1,12 +1,12 @@
-# AGENTS.md
+# CLAUDE.md
 
 This file provides project guidance for coding agents working in this repository.
 
 ## HIGH PRIORITY
 
 - **IF YOU DON'T CHECK SKILLS** your task will be invalidated and we will generate rework
-- **YOU CAN ONLY** finish a task if `npm run test` passes with 100% passing tests. No exceptions — failing tests means the task is **NOT COMPLETE**
-- **`npm run lint` has zero tolerance**. **Zero issues allowed** — any ESLint/TypeScript issue is a blocking failure
+- **YOU CAN ONLY** finish a task if `npm run test` passes (runs tests with coverage). No exceptions — failing tests means the task is **NOT COMPLETE**
+- **`npm run test` has zero tolerance**. **Zero test failures allowed** — any test failure is a blocking failure
 - **ALWAYS** check dependent package APIs before writing integration code or tests to avoid writing wrong code
 - **NEVER** use workarounds — always use the `no-workarounds` skill for any fix/debug task + `testing-anti-patterns` for tests
 - **ALWAYS USE** the `no-workarounds` and `systematic-debugging` skills when fixing bugs or complex issues
@@ -16,20 +16,18 @@ This file provides project guidance for coding agents working in this repository
 ## MANDATORY REQUIREMENTS
 
 - **MUST** run `npm run test` before completing ANY subtask
-- **ALWAYS USE** the `typescript-advanced` skill before writing TypeScript code
 - **ALWAYS USE** the `systematic-debugging` + `no-workarounds` skills before fixing any bug
 - **ALWAYS USE** the `testing-anti-patterns` skill before writing or modifying tests
 - **ALWAYS USE** the `cy-final-verify` skill before claiming any task is done
-- **ALWAYS USE** the `clean-ddd-hexagonal` skill for any DDD, Clean Architecture, or Hexagonal Architecture work
 - **Skipping any verification check will result in IMMEDIATE TASK REJECTION**
 
 ## Project Overview
 
-This is a TypeScript/Node.js backend implementing **Domain-Driven Design (DDD)**, **Clean Architecture**, and **Hexagonal Architecture (Ports and Adapters)** patterns. It uses Fastify for the HTTP layer and PostgreSQL via pg-promise for persistence.
+Compozy is a full-stack application with Node.js/TypeScript backend and React frontend. The backend is built with TypeScript using Fastify, following DDD + Clean Architecture + Hexagonal patterns. It covers product ideation (PRD creation), technical specification, task breakdown with codebase-informed enrichment, and automated execution of each task via AI coding agents.
 
-## Architecture
+## Package Layout
 
-### Domain Structure
+### Backend (`backend/`)
 
 | Path                                            | Responsibility                                            |
 | ----------------------------------------------- | --------------------------------------------------------- |
@@ -40,7 +38,7 @@ This is a TypeScript/Node.js backend implementing **Domain-Driven Design (DDD)**
 | `src/config/`                                   | Configuration, database connections, environment          |
 | `src/main/`                                     | Application entry point, HTTP server setup                |
 
-### Architectural Principles
+#### Architectural Principles
 
 - **Domain layer** has zero dependencies on external frameworks
 - **Application layer** depends only on domain layer
@@ -48,23 +46,42 @@ This is a TypeScript/Node.js backend implementing **Domain-Driven Design (DDD)**
 - **Ports (interfaces)** live in the domain or application layer
 - **Adapters** live in the infrastructure layer
 
+### Frontend (`frontend/`)
+
+| Path                      | Responsibility                |
+| ------------------------- | ----------------------------- |
+| `frontend/src`            | React application source      |
+| `frontend/src/components` | Reusable UI components        |
+| `frontend/src/pages`      | Route pages                   |
+| `frontend/src/hooks`      | Custom React hooks            |
+| `frontend/src/lib`        | Utility functions             |
+| `frontend/src/stores`     | Zustand state stores          |
+| `frontend/src/api`        | API client / server functions |
+
 ## Build & Development Commands
+
+### Backend (`backend/`)
 
 ```bash
 # Full verification pipeline (BLOCKING GATE for any change)
-npm run test              # Run all tests with vitest
+npm run test            # Run tests with coverage
 
 # Individual steps
-npm run build             # Compile TypeScript
-npm run test              # Run tests with vitest
-npm run test:coverage     # Run tests with coverage
+npm run build           # TypeScript compilation
 
-# Database migrations
-npm run migrate:identity_context:up   # Run pending migrations
-npm run migrate:identity_context:down # Rollback last migration
+# Migrations
+npm run migrate:identity_context:up    # Run migrations up
+npm run migrate:identity_context:down  # Run migrations down
+```
 
-# Development
-npm run dev               # Run with ts-node (watch mode)
+### Frontend (`frontend/`) - TBD
+
+```bash
+# To be determined when frontend is scaffolded
+npm run dev             # Development server
+npm run build           # Production build
+npm run test            # Run tests
+npm run lint            # Lint & format check
 ```
 
 ## CRITICAL: Git Commands Restriction
@@ -78,28 +95,98 @@ npm run dev               # Run with ts-node (watch mode)
 
 - **TOOL HIERARCHY**: Use tools in this order:
   1. **Grep** / **Glob** — preferred for local project code
-  2. **`find-skills` skill** — for external TypeScript/Node.js library documentation
+  2. **context7 mcp tool** — for external library documentation
   3. **Web search tools** — for web research, latest news, code examples
 - **FORBIDDEN**: Never use web search tools for local project code
 
 ## Coding Style
 
-- Format with `npm run build` (runs `tsc --noEmit` for type checking)
-- Use explicit error handling with typed errors from `src/shared/errors/`
-- Design small, focused interfaces; accept interfaces, return concrete types
-- Use dependency injection for infrastructure dependencies
-- Do not use `any` when a concrete type is known
-- Do not use reflection without performance justification
-- Keep JSDoc comments short and focused on intent, invariants, or protocol edge cases
+- Format with the project's formatting tooling.
+- Prefer explicit error returns with wrapped context.
+- Use proper error handling patterns; avoid comparing error strings.
+- No `panic()` in production paths; reserve these for truly unrecoverable startup failures only.
+- Use structured logging.
+- Pass `context.Context` as the first argument to all functions crossing runtime boundaries; avoid `context.Background()` outside `main` and focused tests.
+- Design small, focused interfaces; accept interfaces, return structs.
+- Use functional options pattern for complex constructors.
+- Use compile-time interface verification: `var _ Interface = (*Type)(nil)`.
+- Do not use `any` when a concrete type is known.
+- Do not use reflection without performance justification.
+- Keep comments short and focused on intent, invariants, or protocol edge cases.
 
 ## Testing
 
-- Table-driven tests as the default pattern
-- Use `describe`/`it` blocks with `test.each()` for data-driven tests
-- Use `t.TempDir()` for filesystem isolation
-- Mock dependencies via interfaces, not test-only stubs in production code
-- Place test files alongside source files with `.test.ts` suffix
-- Use path aliases: `@modules`, `@shared`, `@config`
+- Table-driven tests with subtests (`t.Run`) as the default pattern.
+- Use `t.Parallel()` for independent subtests.
+- Use `t.TempDir()` for filesystem isolation instead of manual temp directory management.
+- Mark test helper functions with `t.Helper()` so stack traces point to the caller.
+- Run tests with `-race` flag; the race detector must pass before committing.
+- Mock dependencies via interfaces, not test-only methods in production code.
+- Prefer root-cause fixes in failing tests over workarounds that mask the real issue.
+
+## Architecture
+
+### Concurrency discipline
+
+- Every async operation must have explicit ownership and shutdown via `context.Context` cancellation.
+- No untracked async operations; track all with proper lifecycle management.
+- Use `select` with `ctx.Done()` in all long-running loops.
+- Prefer channel-based communication over shared memory when practical.
+- Use `RWMutex` for read-heavy shared state, `Mutex` for write-heavy.
+
+### Runtime discipline
+
+- Keep the system single-binary and local-first.
+- Introduce sidecars or external control planes only with a written techspec.
+- Keep execution paths deterministic and observable.
+
+## Agent Skill Dispatch Protocol
+
+Every agent MUST follow this protocol before writing code:
+
+### Step 1: Identify Task Domain
+
+Scan the task description and target files to determine which domains are involved:
+
+- **Backend / Node.js** keywords: package, struct, interface, async, channel, context, logger, functional options, constructor, error handling
+- **Config** keywords: config, TOML, environment, validation, settings
+- **Logging** keywords: logger, logging, slog, log level, observer
+- **Bug fix** keywords: bug, fix, error, failure, crash, unexpected, broken, regression
+- **Writing tests** keywords: test, spec, mock, stub, fixture, assertion, coverage, table-driven
+- **Task completion** keywords: done, complete, finished, ship
+- **Architecture audit** keywords: architecture, dead code, code smell, anti-pattern, duplication
+- **Creative / new features** keywords: new, feature, design, add, create, implement
+- **Frontend / React** keywords: react, component, jsx, tsx, hook, props, state, render, virtual DOM
+- **Frontend stack** keywords: shadcn, tailwind, tanstack, router, query, vitest, storybook, zod, zustand, vite, ai-sdk
+- **TypeScript** keywords: typescript, type, generic, interface, utility type, tsx, ts
+- **UI / UX design** keywords: design, layout, spacing, typography, color, visual, hierarchy, mockup, interface, minimalist, redesign, logo, brand
+
+### Step 2: Activate All Matching Skills
+
+Use the `Skill` tool to activate every skill that matches the identified domains:
+
+| Domain                  | Required Skills                                                                 | Conditional Skills                                                                   |
+| ----------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Backend / Node.js       | `typescript-advanced`                                                           | `clean-ddd-hexagonal`                                                               |
+| Config                  | `typescript-advanced`                                                           |                                                                                      |
+| Logging                 | `typescript-advanced`                                                           |                                                                                      |
+| Bug fix                 | `systematic-debugging` + `no-workarounds`                                       | `testing-anti-patterns`                                                              |
+| Writing tests           | `testing-anti-patterns` + `typescript-advanced`                                 |                                                                                      |
+| Task completion         | `cy-final-verify`                                                               |                                                                                      |
+| Frontend / React        | `typescript-advanced`                                                          | `vercel-react-best-practices`                                                       |
+| shadcn / Tailwind UI    | `shadcn` + `shadcn-ui` + `tailwindcss`                                            |                                                                                      |
+| TanStack stack          | `tanstack` + `tanstack-query-best-practices` + `tanstack-router-best-practices` | `tanstack-start-best-practices`                                                      |
+| Frontend state         | `zustand`                                                                      |                                                                                      |
+| UI / UX design          | `frontend-design` + `interface-design`                                         | `minimalist-ui`, `web-design-guidelines`                                            |
+
+### Step 3: Verify Before Completion
+
+Before any agent marks a task as complete:
+
+1. Activate `cy-final-verify` skill
+2. Run `npm run test`
+3. Read and verify the full output — no skipping
+4. Only then claim completion
 
 ## Anti-Patterns for Agents
 
@@ -115,7 +202,7 @@ npm run dev               # Run with ts-node (watch mode)
 8. **Add dependencies by hand in package.json** — always use `npm install`
 9. **Use web search tools for local code** — only for external library documentation
 10. **Run destructive git commands without permission** — `git restore`, `git reset`, `git clean` require explicit user approval
-11. **Import infrastructure in domain layer** — domain must be framework-agnostic
-12. **Use `setTimeout`/`setInterval` in orchestration** — use proper synchronization primitives instead
+11. **Fire-and-forget async operations** — every async operation must have explicit ownership and shutdown handling
+12. **Use sleep in orchestration** — use proper synchronization primitives instead
 13. **Ignore errors with `_`** — every error must be handled or have a written justification
-14. **Hardcode configuration** — use config module or environment variables
+14. **Hardcode configuration** — use TOML config or functional options
