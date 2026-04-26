@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { User } from '../entities/user';
 import { Email } from '../value_objects/email';
+import { Name } from '../value_objects/name';
 import { Password } from '../value_objects/password';
 import { UserId } from '../value_objects/user_id';
 import { UserRegisteredEvent } from '../events/user_registered';
@@ -8,6 +9,8 @@ import { UserRegisteredEvent } from '../events/user_registered';
 describe('User', () => {
   const validUserId = '550e8400-e29b-41d4-a716-446655440000';
   const validEmail = 'test@example.com';
+  const validName = 'John Doe';
+  const validNameVO = Name.create(validName);
   const validPasswordHash = '$2b$12$hashedpassword1234567890123456789012';
 
   describe('constructor', () => {
@@ -18,10 +21,11 @@ describe('User', () => {
       const createdAt = new Date();
       const updatedAt = new Date();
 
-      const user = new User(userId, email, password, createdAt, updatedAt);
+      const user = new User(userId, email, validNameVO, password, createdAt, updatedAt);
 
       expect(user.getId().value).toBe(validUserId);
       expect(user.email.value).toBe(validEmail);
+      expect(user.name.value).toBe(validName);
       expect(user.password.hash).toBe(validPasswordHash);
       expect(user.createdAt).toBe(createdAt);
       expect(user.updatedAt).toBe(updatedAt);
@@ -33,10 +37,11 @@ describe('User', () => {
       const userId = UserId.create(validUserId);
       const email = Email.create(validEmail);
 
-      const user = User.create(userId, email, validPasswordHash);
+      const user = User.create(userId, email, validNameVO, validPasswordHash);
 
       expect(user.getId().value).toBe(validUserId);
       expect(user.email.value).toBe(validEmail);
+      expect(user.name.value).toBe(validName);
       expect(user.password.hash).toBe(validPasswordHash);
       expect(user.createdAt).toBeInstanceOf(Date);
       expect(user.updatedAt).toBeInstanceOf(Date);
@@ -46,7 +51,7 @@ describe('User', () => {
       const userId = UserId.create(validUserId);
       const email = Email.create(validEmail);
 
-      const user = User.create(userId, email, validPasswordHash);
+      const user = User.create(userId, email, validNameVO, validPasswordHash);
 
       const events = user.pullDomainEvents();
       expect(events).toHaveLength(1);
@@ -60,7 +65,7 @@ describe('User', () => {
       const userId = UserId.create(validUserId);
       const email = Email.create(validEmail);
 
-      const user = User.create(userId, email, validPasswordHash);
+      const user = User.create(userId, email, validNameVO, validPasswordHash);
       user.pullDomainEvents();
 
       const events = user.pullDomainEvents();
@@ -74,7 +79,7 @@ describe('User', () => {
       const email = Email.create(validEmail);
       const newHash = '$2b$12$newpasswordhash123456789012';
 
-      const user = User.create(userId, email, validPasswordHash);
+      const user = User.create(userId, email, validNameVO, validPasswordHash);
 
       user.changePassword(newHash);
 
@@ -87,7 +92,7 @@ describe('User', () => {
       const userId = UserId.create(validUserId);
       const email = Email.create(validEmail);
 
-      const user = User.create(userId, email, validPasswordHash);
+      const user = User.create(userId, email, validNameVO, validPasswordHash);
 
       expect(user.getId().equals(userId)).toBe(true);
     });

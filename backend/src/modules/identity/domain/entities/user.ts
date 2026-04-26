@@ -1,5 +1,6 @@
 import { AggregateRoot } from '../../../../shared/types/aggregate_root';
 import { Email } from '../value_objects/email';
+import { Name } from '../value_objects/name';
 import { Password } from '../value_objects/password';
 import { UserId } from '../value_objects/user_id';
 import { UserRegisteredEvent } from '../events/user_registered';
@@ -9,6 +10,7 @@ export class User extends AggregateRoot<UserId> {
   public constructor(
     id: UserId,
     private readonly _email: Email,
+    private readonly _name: Name,
     private _password: Password,
     private readonly _createdAt: Date,
     private _updatedAt: Date
@@ -16,15 +18,19 @@ export class User extends AggregateRoot<UserId> {
     super(id);
   }
 
-  static create(id: UserId, email: Email, passwordHash: string): User {
+  static create(id: UserId, email: Email, name: Name, passwordHash: string): User {
     const password = Password.create(passwordHash);
-    const user = new User(id, email, password, new Date(), new Date());
+    const user = new User(id, email, name, password, new Date(), new Date());
     user.addDomainEvent(new UserRegisteredEvent(user.id, user._email));
     return user;
   }
 
   get email(): Email {
     return this._email;
+  }
+
+  get name(): Name {
+    return this._name;
   }
 
   get password(): Password {

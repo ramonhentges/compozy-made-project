@@ -54,4 +54,32 @@ describe('Password', () => {
       expect(password.hash).toBe(hash);
     });
   });
+
+  describe('validateRaw', () => {
+    it('should reject passwords shorter than 8 characters', () => {
+      expect(Password.validateRaw('Short1!')).toBe(false);
+      expect(Password.validateRaw('')).toBe(false);
+    });
+
+    it('should reject passwords without uppercase', () => {
+      expect(Password.validateRaw('password1!')).toBe(false);
+    });
+
+    it('should reject passwords without lowercase', () => {
+      expect(Password.validateRaw('PASSWORD1!')).toBe(false);
+    });
+
+    it('should reject passwords without numbers', () => {
+      expect(Password.validateRaw('Password!')).toBe(false);
+    });
+
+    it('should reject passwords without special characters', () => {
+      expect(Password.validateRaw('Password1')).toBe(false);
+    });
+
+    it('should accept valid passwords', () => {
+      expect(Password.validateRaw('ValidPass1!')).toBe(true);
+      expect(Password.validateRaw('Secure#123')).toBe(true);
+    });
+  });
 });
