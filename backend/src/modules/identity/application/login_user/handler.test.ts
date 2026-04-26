@@ -6,11 +6,13 @@ import { ITokenService, TokenPayload } from '../../domain/services/token_service
 import { InvalidCredentialsError } from '../../domain/errors/invalid_credentials_error';
 import { User } from '../../domain/entities/user';
 import { Email } from '../../domain/value_objects/email';
+import { Name } from '../../domain/value_objects/name';
 import { UserId } from '../../domain/value_objects/user_id';
 
 describe('LoginUserHandler', () => {
   const validUserId = '550e8400-e29b-41d4-a716-446655440000';
   const validEmail = 'test@example.com';
+  const validName = 'John Doe';
   const validPassword = 'password123';
   const hashedPassword = '$2b$12$hashedpassword1234567890123456789012';
 
@@ -51,7 +53,8 @@ describe('LoginUserHandler', () => {
     it('should return tokens on valid credentials', async () => {
       const userId = UserId.create(validUserId);
       const email = Email.create(validEmail);
-      const user = User.create(userId, email, hashedPassword);
+      const name = Name.create(validName);
+      const user = User.create(userId, email, name, hashedPassword);
 
       mockUserRepository.findByEmail = vi.fn().mockResolvedValue(user);
       mockPasswordHasher.verify = vi.fn().mockResolvedValue(true);
@@ -79,7 +82,8 @@ describe('LoginUserHandler', () => {
     it('should throw on invalid credentials - wrong password', async () => {
       const userId = UserId.create(validUserId);
       const email = Email.create(validEmail);
-      const user = User.create(userId, email, hashedPassword);
+      const name = Name.create(validName);
+      const user = User.create(userId, email, name, hashedPassword);
 
       mockUserRepository.findByEmail = vi.fn().mockResolvedValue(user);
       mockPasswordHasher.verify = vi.fn().mockResolvedValue(false);

@@ -106,7 +106,7 @@ describe('config', () => {
 
       const { config: freshConfig } = await import('./index');
 
-      expect(freshConfig.kafka.identityOutboxTopic).toBe('identity-outbox');
+      expect(freshConfig.kafka.identityOutboxTopic).toBe('com.test.identity');
     });
 
     it('should use IDENTITY_OUTBOX_TOPIC env variable', async () => {

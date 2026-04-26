@@ -4,11 +4,13 @@ import { IUserRepository } from '../../domain/repository/user_repository';
 import { UserNotFoundError } from '../../domain/errors/user_not_found_error';
 import { User } from '../../domain/entities/user';
 import { Email } from '../../domain/value_objects/email';
+import { Name } from '../../domain/value_objects/name';
 import { UserId } from '../../domain/value_objects/user_id';
 
 describe('LogoutUserHandler', () => {
   const validUserId = '550e8400-e29b-41d4-a716-446655440000';
   const validEmail = 'test@example.com';
+  const validName = 'John Doe';
   const hashedPassword = '$2b$12$hashedpassword1234567890123456789012';
 
   let mockUserRepository: IUserRepository;
@@ -32,7 +34,8 @@ describe('LogoutUserHandler', () => {
     it('should validate session - user exists', async () => {
       const userId = UserId.create(validUserId);
       const email = Email.create(validEmail);
-      const user = User.create(userId, email, hashedPassword);
+      const name = Name.create(validName);
+      const user = User.create(userId, email, name, hashedPassword);
 
       mockUserRepository.findById = vi.fn().mockResolvedValue(user);
 
