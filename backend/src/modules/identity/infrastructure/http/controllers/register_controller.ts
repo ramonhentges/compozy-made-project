@@ -5,6 +5,7 @@ import { DuplicateEmailError, InvalidPasswordError } from '../../../application/
 
 export interface RegisterBody {
   email: string;
+  name: string;
   password: string;
 }
 
@@ -14,6 +15,7 @@ export class RegisterController {
   async handle(request: FastifyRequest<{ Body: RegisterBody }>, reply: FastifyReply): Promise<RegisterUserResult> {
     const command: RegisterUserCommand = {
       email: request.body.email,
+      name: request.body.name,
       password: request.body.password,
     };
 
@@ -35,9 +37,10 @@ export class RegisterController {
 export const registerControllerSchema = {
   body: {
     type: 'object',
-    required: ['email', 'password'],
+    required: ['email', 'name', 'password'],
     properties: {
       email: { type: 'string', format: 'email' },
+      name: { type: 'string', minLength: 1, maxLength: 100 },
       password: { type: 'string', minLength: 8 },
     },
   },
@@ -47,6 +50,7 @@ export const registerControllerSchema = {
       properties: {
         userId: { type: 'string' },
         email: { type: 'string' },
+        name: { type: 'string' },
       },
     },
     400: {

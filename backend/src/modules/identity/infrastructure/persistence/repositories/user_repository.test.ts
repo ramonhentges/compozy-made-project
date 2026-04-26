@@ -3,6 +3,7 @@ import { UserRepository } from '../repositories/user_repository';
 import { User } from '../../../domain/entities/user';
 import { UserId } from '../../../domain/value_objects/user_id';
 import { Email } from '../../../domain/value_objects/email';
+import { Name } from '../../../domain/value_objects/name';
 import { IDatabase } from 'pg-promise';
 import { buildBatchInsertSQL } from '../sql/outbox_sql';
 
@@ -26,7 +27,8 @@ describe('UserRepository', () => {
   const createTestUser = (): User => {
     const userId = UserId.create('a1b2c3d4-e5f6-4789-abcd-ef0123456789');
     const email = Email.create('test@example.com');
-    return User.create(userId, email, 'hashedPassword123');
+    const name = Name.create('John Doe');
+    return User.create(userId, email, name, 'hashedPassword123');
   };
 
   describe('findByEmail', () => {
@@ -35,6 +37,7 @@ describe('UserRepository', () => {
       (mockDb.oneOrNone as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: user.getId().value,
         email: user.email.value,
+        name: user.name.value,
         password_hash: user.password.hash,
         created_at: user.createdAt,
         updated_at: user.updatedAt,
@@ -62,6 +65,7 @@ describe('UserRepository', () => {
       (mockDb.oneOrNone as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: user.getId().value,
         email: user.email.value,
+        name: user.name.value,
         password_hash: user.password.hash,
         created_at: user.createdAt,
         updated_at: user.updatedAt,

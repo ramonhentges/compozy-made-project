@@ -2,6 +2,7 @@ import pgPromise, { IDatabase, IMain } from 'pg-promise';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { User } from '../../../domain/entities/user';
 import { Email } from '../../../domain/value_objects/email';
+import { Name } from '../../../domain/value_objects/name';
 import { UserId } from '../../../domain/value_objects/user_id';
 import { UserRepository } from './user_repository';
 
@@ -101,6 +102,7 @@ describeWithDatabase('UserRepository database transaction integration', () => {
     return User.create(
       UserId.create(id),
       Email.create(emailAddress),
+      Name.create('Test User'),
       'hashedPassword123'
     );
   }

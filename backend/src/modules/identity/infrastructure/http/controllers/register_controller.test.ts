@@ -5,6 +5,7 @@ import { DuplicateEmailError, InvalidPasswordError } from '../../../application/
 
 describe('RegisterController', () => {
   const validEmail = 'test@example.com';
+  const validName = 'John Doe';
   const validPassword = 'password123';
 
   let mockRegisterUserUseCase: IRegisterUserUseCase;
@@ -19,11 +20,11 @@ describe('RegisterController', () => {
 
   describe('handle', () => {
     it('should return 201 on successful registration', async () => {
-      const mockResult = { userId: 'user-id', email: validEmail };
+      const mockResult = { userId: 'user-id', email: validEmail, name: validName };
       mockRegisterUserUseCase.execute = vi.fn().mockResolvedValue(mockResult);
 
       const mockRequest = {
-        body: { email: validEmail, password: validPassword },
+        body: { email: validEmail, name: validName, password: validPassword },
       } as any;
       const mockReply = {
         status: vi.fn().mockReturnThis(),
@@ -42,7 +43,7 @@ describe('RegisterController', () => {
       );
 
       const mockRequest = {
-        body: { email: validEmail, password: validPassword },
+        body: { email: validEmail, name: validName, password: validPassword },
       } as any;
       const mockReply = {
         status: vi.fn().mockReturnThis(),
@@ -61,7 +62,7 @@ describe('RegisterController', () => {
       );
 
       const mockRequest = {
-        body: { email: validEmail, password: 'weak' },
+        body: { email: validEmail, name: validName, password: 'weak' },
       } as any;
       const mockReply = {
         status: vi.fn().mockReturnThis(),
@@ -78,10 +79,11 @@ describe('RegisterController', () => {
       mockRegisterUserUseCase.execute = vi.fn().mockResolvedValue({
         userId: 'user-id',
         email: validEmail,
+        name: validName,
       });
 
       const mockRequest = {
-        body: { email: validEmail, password: validPassword },
+        body: { email: validEmail, name: validName, password: validPassword },
       } as any;
       const mockReply = {
         status: vi.fn().mockReturnThis(),
@@ -92,6 +94,7 @@ describe('RegisterController', () => {
 
       expect(mockRegisterUserUseCase.execute).toHaveBeenCalledWith({
         email: validEmail,
+        name: validName,
         password: validPassword,
       });
     });

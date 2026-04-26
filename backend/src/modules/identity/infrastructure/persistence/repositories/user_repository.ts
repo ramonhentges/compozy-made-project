@@ -21,7 +21,7 @@ export class UserRepository implements IUserRepository {
 
   async findByEmail(email: Email): Promise<User | null> {
     const row = await this.db.oneOrNone<UserDTO>(
-      `SELECT id, email, password_hash, created_at, updated_at 
+      `SELECT id, email, name, password_hash, created_at, updated_at 
        FROM users 
        WHERE email = $1`,
       [email.value]
@@ -34,7 +34,7 @@ export class UserRepository implements IUserRepository {
 
   async findById(userId: UserId): Promise<User | null> {
     const row = await this.db.oneOrNone<UserDTO>(
-      `SELECT id, email, password_hash, created_at, updated_at 
+      `SELECT id, email, name, password_hash, created_at, updated_at 
        FROM users 
        WHERE id = $1`,
       [userId.value]
@@ -51,9 +51,9 @@ export class UserRepository implements IUserRepository {
 
     await this.db.tx(async (transaction) => {
       await transaction.none(
-        `INSERT INTO users (id, email, password_hash, created_at, updated_at) 
-         VALUES ($1, $2, $3, $4, $5)`,
-        [dto.id, dto.email, dto.password_hash, dto.created_at, dto.updated_at]
+        `INSERT INTO users (id, email, name, password_hash, created_at, updated_at) 
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [dto.id, dto.email, dto.name, dto.password_hash, dto.created_at, dto.updated_at]
       );
       await this.insertOutboxEvents(transaction, domainEvents);
     });
@@ -66,9 +66,9 @@ export class UserRepository implements IUserRepository {
     await this.db.tx(async (transaction) => {
       await transaction.none(
         `UPDATE users 
-         SET email = $2, password_hash = $3, updated_at = $4 
+         SET email = $2, name = $3, password_hash = $4, updated_at = $5 
          WHERE id = $1`,
-        [dto.id, dto.email, dto.password_hash, dto.updated_at]
+        [dto.id, dto.email, dto.name, dto.password_hash, dto.updated_at]
       );
       await this.insertOutboxEvents(transaction, domainEvents);
     });
