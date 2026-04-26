@@ -1,6 +1,8 @@
 import { RegisterUserCommand, RegisterUserResult } from './command';
 import { IRegisterUserUseCase } from './port';
 import { Email } from '../../domain/value_objects/email';
+import { Name } from '../../domain/value_objects/name';
+import { Password } from '../../domain/value_objects/password';
 import { UserId } from '../../domain/value_objects/user_id';
 import { User } from '../../domain/entities/user';
 import { IUserRepository } from '../../domain/repository/user_repository';
@@ -13,10 +15,9 @@ export class DuplicateEmailError extends DomainError {
   }
 }
 
-export class InvalidPasswordError extends Error {
+export class InvalidPasswordError extends DomainError {
   constructor() {
-    super('Password does not meet complexity requirements');
-    this.name = 'InvalidPasswordError';
+    super('INVALID_PASSWORD', 'Password does not meet complexity requirements', {});
   }
 }
 
@@ -34,31 +35,13 @@ export class RegisterUserHandler implements IRegisterUserUseCase {
     this.passwordHasher = deps.passwordHasher;
   }
 
-  private isValidPassword(password: string): boolean {
-    if (!password || password.length < 8) {
-      return false;
-    }
-    if (!/[A-Z]/.test(password)) {
-      return false;
-    }
-    if (!/[a-z]/.test(password)) {
-      return false;
-    }
-    if (!/[0-9]/.test(password)) {
-      return false;
-    }
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      return false;
-    }
-    return true;
-  }
-
   async execute(command: RegisterUserCommand): Promise<RegisterUserResult> {
-    if (!this.isValidPassword(command.password)) {
+    if (!Password.validateRaw(command.password)) {
       throw new InvalidPasswordError();
     }
 
     const email = Email.create(command.email);
+    const name = Name.create(command.name);
 
     const existingUser = await this.userRepository.findByEmail(email);
     if (existingUser) {
@@ -68,13 +51,14 @@ export class RegisterUserHandler implements IRegisterUserUseCase {
     const userId = UserId.create();
     const passwordHash = await this.passwordHasher.hash(command.password);
 
-    const user = User.create(userId, email, passwordHash);
+    const user = User.create(userId, email, name, passwordHash);
 
     await this.userRepository.save(user);
 
     return {
       userId: user.getId().value,
       email: user.email.value,
+      name: user.name.value,
     };
   }
 }

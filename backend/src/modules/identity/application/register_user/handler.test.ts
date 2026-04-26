@@ -6,6 +6,7 @@ import { IPasswordHasher } from '../../domain/services/password_hasher';
 describe('RegisterUserHandler', () => {
   const validEmail = 'test@example.com';
   const validPassword = 'Password123!';
+  const validName = 'John Doe';
   const hashedPassword = '$2b$12$hashedpassword1234567890123456789012';
 
   let mockUserRepository: IUserRepository;
@@ -37,11 +38,13 @@ describe('RegisterUserHandler', () => {
       const result = await handler.execute({
         email: validEmail,
         password: validPassword,
+        name: validName,
       });
 
       expect(mockPasswordHasher.hash).toHaveBeenCalledWith(validPassword);
       expect(mockUserRepository.save).toHaveBeenCalledTimes(1);
       expect(result.email).toBe(validEmail);
+      expect(result.name).toBe(validName);
       expect(result.userId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
     });
 
@@ -53,6 +56,7 @@ describe('RegisterUserHandler', () => {
         handler.execute({
           email: validEmail,
           password: validPassword,
+          name: validName,
         })
       ).rejects.toThrow(DuplicateEmailError);
     });
@@ -62,6 +66,7 @@ describe('RegisterUserHandler', () => {
         handler.execute({
           email: validEmail,
           password: 'Short1!',
+          name: validName,
         })
       ).rejects.toThrow(InvalidPasswordError);
     });
@@ -71,6 +76,7 @@ describe('RegisterUserHandler', () => {
         handler.execute({
           email: validEmail,
           password: 'password123!',
+          name: validName,
         })
       ).rejects.toThrow(InvalidPasswordError);
     });
@@ -80,6 +86,7 @@ describe('RegisterUserHandler', () => {
         handler.execute({
           email: validEmail,
           password: 'PASSWORD123!',
+          name: validName,
         })
       ).rejects.toThrow(InvalidPasswordError);
     });
@@ -89,6 +96,7 @@ describe('RegisterUserHandler', () => {
         handler.execute({
           email: validEmail,
           password: 'PasswordABC!',
+          name: validName,
         })
       ).rejects.toThrow(InvalidPasswordError);
     });
@@ -98,6 +106,7 @@ describe('RegisterUserHandler', () => {
         handler.execute({
           email: validEmail,
           password: 'Password123',
+          name: validName,
         })
       ).rejects.toThrow(InvalidPasswordError);
     });
@@ -107,6 +116,7 @@ describe('RegisterUserHandler', () => {
         handler.execute({
           email: validEmail,
           password: '',
+          name: validName,
         })
       ).rejects.toThrow(InvalidPasswordError);
     });
