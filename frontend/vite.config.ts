@@ -3,10 +3,11 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   server: {
-    port: 3000,
+    port: 5173,
+    host: "0.0.0.0",
     proxy: {
       "/api": {
-        target: process.env.VITE_API_URL || "http://localhost:3001",
+        target: process.env.VITE_API_URL || "http://backend:3000",
         changeOrigin: true,
       },
     },
@@ -15,13 +16,6 @@ export default defineConfig({
     alias: {
       "~": path.resolve(__dirname, "./src"),
       "@": path.resolve(__dirname, "./src"),
-    },
-  },
-  test: {
-    environment: 'jsdom',
-    include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
-    coverage: {
-      reporter: ['text', 'html'],
     },
   },
 });

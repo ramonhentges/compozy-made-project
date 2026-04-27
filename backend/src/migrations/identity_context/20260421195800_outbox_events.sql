@@ -1,6 +1,4 @@
--- Outbox Events for Identity Bounded Context
--- Stores durable domain event envelopes and relay retry state
--- Timestamp: 20260421195800
+-- Up Migration
 
 CREATE TABLE IF NOT EXISTS events (
     id uuid PRIMARY KEY,
@@ -24,3 +22,11 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE INDEX IF NOT EXISTS idx_events_status_next_attempt_at ON events(status, next_attempt_at);
 CREATE INDEX IF NOT EXISTS idx_events_aggregate ON events(aggregate_type, aggregate_id);
 CREATE INDEX IF NOT EXISTS idx_events_event_name_version ON events(event_name, event_version);
+
+-- Down Migration
+
+DROP INDEX IF EXISTS idx_events_event_name_version;
+DROP INDEX IF EXISTS idx_events_aggregate;
+DROP INDEX IF EXISTS idx_events_status_next_attempt_at;
+
+DROP TABLE IF EXISTS events;

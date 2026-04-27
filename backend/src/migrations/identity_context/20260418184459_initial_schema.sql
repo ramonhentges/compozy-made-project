@@ -1,7 +1,4 @@
--- Initial Schema for Identity Bounded Context
--- Creates users, roles, and permissions tables with appropriate relationships
--- Timestamp: 20260418184459
-
+-- Up Migration
 
 -- Users table (core authentication entity)
 CREATE TABLE IF NOT EXISTS users (
@@ -16,3 +13,10 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Indexes for frequently queried fields
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- Down Migration
+
+-- Drop main tables
+DROP TABLE IF EXISTS users;
+
+-- Indexes are automatically dropped when tables are dropped
