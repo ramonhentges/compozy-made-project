@@ -3,6 +3,11 @@ import {
   identityDbConfig,
 } from "./databases/identity_context";
 
+export interface SendGridConfig {
+  apiKey: string;
+  defaultFrom: string;
+}
+
 export interface KafkaConfig {
   brokers: string[];
   clientId: string;
@@ -28,6 +33,7 @@ export interface AppConfig {
   bcrypt: {
     rounds: number;
   };
+  sendgrid: SendGridConfig;
   kafka: KafkaConfig;
   outboxRelay: OutboxRelayConfig;
 }
@@ -69,6 +75,10 @@ export const config: AppConfig = {
   },
   bcrypt: {
     rounds: parseInt(process.env.BCRYPT_ROUNDS ?? "12", 10),
+  },
+  sendgrid: {
+    apiKey: getRequiredEnv("SENDGRID_API_KEY"),
+    defaultFrom: process.env.SENDGRID_DEFAULT_FROM ?? "noreply@example.com",
   },
   kafka: {
     brokers: parseKafkaBrokers(),
