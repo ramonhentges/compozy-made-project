@@ -31,4 +31,17 @@ describe('WelcomeTemplate', () => {
     expect(template.htmlBody).toContain('Acme Corp');
     expect(template.textBody).toContain('Acme Corp Team');
   });
+
+  it('should escape HTML in firstName to prevent injection', () => {
+    const template = WelcomeTemplate.create({ name: '<script>alert("xss")</script>' });
+
+    expect(template.htmlBody).not.toContain('<script>');
+    expect(template.htmlBody).toContain('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
+  });
+
+  it('should escape special HTML characters in firstName', () => {
+    const template = WelcomeTemplate.create({ name: '<script>alert("xss")</script>' });
+
+    expect(template.htmlBody).toContain('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
+  });
 });

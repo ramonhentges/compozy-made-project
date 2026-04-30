@@ -1,8 +1,18 @@
 import { EmailTemplate } from '../value_objects/email_template';
 
 export class WelcomeTemplate {
+  private static escapeHtml(unsafe: string): string {
+    return unsafe
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   static create(data: { name?: string }): EmailTemplate {
-    const firstName = data.name?.split(' ')[0] || 'there';
+    const rawFirstName = data.name?.split(' ')[0] || 'there';
+    const firstName = this.escapeHtml(rawFirstName);
 
     return {
       name: 'welcome',
