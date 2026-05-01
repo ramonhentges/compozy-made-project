@@ -5,6 +5,7 @@ import { EmailMessage } from '../../domain/value_objects/email_template';
 export interface SendGridAdapterConfig {
   apiKey: string;
   defaultFrom?: string;
+  sandboxMode?: boolean;
 }
 
 export class SendGridAdapter implements IEmailService {
@@ -13,18 +14,21 @@ export class SendGridAdapter implements IEmailService {
   }
 
   async sendEmail(message: EmailMessage): Promise<void> {
-    const msg = {
-      to: message.to,
-      from: message.from || this.config.defaultFrom,
-      subject: message.subject,
-      html: message.html,
-      text: message.text,
-    };
+    const from = message.from || this.config.defaultFrom;
 
-    if (!msg.from) {
+    if (!from) {
       throw new Error('From address is required: provide it in the message or set defaultFrom in config');
     }
 
-    await sgMail.send(msg);
+    const msg = {
+      to: message.to,
+      from,
+      subject: message.subject,
+      html: message.html,
+      text: message.text,
+      mailSettings: this.config.sandboxMode ? { sandboxMode: { enable: true } } : undefined,
+    };
+
+    await sgMail.send(msg as Parameters<typeof sgMail.send>[0]);
   }
 }

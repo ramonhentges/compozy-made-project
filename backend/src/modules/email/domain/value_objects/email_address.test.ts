@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { EmailAddress, InvalidEmailAddressError } from './email_address';
 
 describe('EmailAddress', () => {

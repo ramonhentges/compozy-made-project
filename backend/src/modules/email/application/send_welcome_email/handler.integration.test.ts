@@ -18,6 +18,7 @@ describeWithSendGrid('SendWelcomeEmailHandler integration with SendGrid sandbox'
       apiKey: sendGridApiKey!,
       fromEmail,
       fromName,
+      sandboxMode: true,
     });
 
     handler = new SendWelcomeEmailHandler({
@@ -28,9 +29,6 @@ describeWithSendGrid('SendWelcomeEmailHandler integration with SendGrid sandbox'
   });
 
   it('should send welcome email via SendGrid sandbox mode', async () => {
-    const sgMail = require('@sendgrid/mail');
-    sgMail.setApiKey(sendGridApiKey!);
-
     const testEmail = 'test@example.com';
 
     await expect(

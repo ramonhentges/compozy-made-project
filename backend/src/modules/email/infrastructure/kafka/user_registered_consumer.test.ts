@@ -1,19 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { UserRegisteredConsumer } from "./user_registered_consumer";
-import { ISendWelcomeEmailUseCase } from "../../application/send_welcome_email/port";
-import { SendWelcomeEmailCommand } from "../../application/send_welcome_email/command";
 import { KafkaMessage } from "kafkajs";
 
 describe("UserRegisteredConsumer", () => {
-  let mockSendWelcomeEmail: any;
   let mockConsumer: any;
-  let mockKafka: any;
+  let mockSendWelcomeEmail: any;
   let logger: any;
+  let consumer: UserRegisteredConsumer;
 
   const config = {
-    brokers: ["localhost:9092"],
-    clientId: "test-client",
-    groupId: "test-group",
     topic: "com.test.identity.UserRegistered",
     maxRetries: 3,
     initialDelayMs: 100,
@@ -21,6 +16,16 @@ describe("UserRegisteredConsumer", () => {
   };
 
   beforeEach(() => {
+    mockConsumer = {
+      connect: vi.fn().mockResolvedValue(undefined),
+      disconnect: vi.fn().mockResolvedValue(undefined),
+      subscribe: vi.fn().mockResolvedValue(undefined),
+      run: vi.fn().mockImplementation(async (opts: any) => {
+        // Store the eachMessage handler for direct testing
+        (mockConsumer as any)._eachMessageHandler = opts.eachMessage;
+      }),
+    };
+
     mockSendWelcomeEmail = {
       execute: vi.fn().mockResolvedValue(undefined),
     } as any;
@@ -31,29 +36,15 @@ describe("UserRegisteredConsumer", () => {
       warn: vi.fn(),
     };
 
-    mockConsumer = {
-      connect: vi.fn().mockResolvedValue(undefined),
-      disconnect: vi.fn().mockResolvedValue(undefined),
-      subscribe: vi.fn().mockResolvedValue(undefined),
-      run: vi.fn().mockResolvedValue(undefined),
-    };
-
-    mockKafka = {
-      consumer: vi.fn().mockReturnValue(mockConsumer),
-    };
-
-    // Mock the Kafka import
-    vi.mock("kafkajs", () => ({
-      Kafka: vi.fn().mockImplementation(() => mockKafka),
-    }));
+    consumer = new UserRegisteredConsumer(
+      { kafkaConsumer: mockConsumer, ...config },
+      mockSendWelcomeEmail,
+      logger
+    );
   });
 
   describe("start", () => {
     it("should connect consumer and subscribe to topic", async () => {
-      const consumer = new UserRegisteredConsumer(config, mockSendWelcomeEmail, logger);
-
-      (consumer as any).consumer = mockConsumer;
-
       await consumer.start();
 
       expect(mockConsumer.connect).toHaveBeenCalled();
@@ -65,10 +56,8 @@ describe("UserRegisteredConsumer", () => {
     });
 
     it("should not start twice", async () => {
-      const consumer = new UserRegisteredConsumer(config, mockSendWelcomeEmail, logger);
-
-      (consumer as any).consumer = mockConsumer;
-      (consumer as any).running = true;
+      await consumer.start();
+      vi.clearAllMocks();
 
       await consumer.start();
 
@@ -78,10 +67,8 @@ describe("UserRegisteredConsumer", () => {
 
   describe("stop", () => {
     it("should disconnect consumer", async () => {
-      const consumer = new UserRegisteredConsumer(config, mockSendWelcomeEmail, logger);
-
-      (consumer as any).consumer = mockConsumer;
-      (consumer as any).running = true;
+      await consumer.start();
+      vi.clearAllMocks();
 
       await consumer.stop();
 
@@ -89,18 +76,21 @@ describe("UserRegisteredConsumer", () => {
     });
 
     it("should not stop if not running", async () => {
-      const consumer = new UserRegisteredConsumer(config, mockSendWelcomeEmail, logger);
-
       await consumer.stop();
 
       expect(mockConsumer.disconnect).not.toHaveBeenCalled();
     });
   });
 
-  describe("handleMessage", () => {
-    it("should parse message and call handler", async () => {
-      const consumer = new UserRegisteredConsumer(config, mockSendWelcomeEmail, logger);
+  describe("handleMessage via eachMessage", () => {
+    async function triggerEachMessage(message: KafkaMessage) {
+      await consumer.start();
+      const handler = (mockConsumer as any)._eachMessageHandler;
+      expect(handler).toBeDefined();
+      await handler({ message });
+    }
 
+    it("should parse message and call handler", async () => {
       const message: KafkaMessage = {
         offset: "123",
         value: Buffer.from(JSON.stringify({ email: "test@example.com" })),
@@ -111,18 +101,16 @@ describe("UserRegisteredConsumer", () => {
         size: 100,
       };
 
-      await (consumer as any).handleMessage(message);
+      await triggerEachMessage(message);
 
       expect(mockSendWelcomeEmail.execute).toHaveBeenCalledOnce();
       expect(logger.info).toHaveBeenCalledWith(
-        expect.objectContaining({ email: "test@example.com" }),
+        expect.objectContaining({ email: "te***@example.com" }),
         "email.consumer.processed"
       );
     });
 
     it("should handle invalid message payload", async () => {
-      const consumer = new UserRegisteredConsumer(config, mockSendWelcomeEmail, logger);
-
       const message: KafkaMessage = {
         offset: "123",
         value: Buffer.from("invalid json"),
@@ -133,14 +121,12 @@ describe("UserRegisteredConsumer", () => {
         size: 100,
       };
 
-      await (consumer as any).handleMessage(message);
+      await triggerEachMessage(message);
 
       expect(logger.error).toHaveBeenCalled();
     });
 
     it("should handle empty message", async () => {
-      const consumer = new UserRegisteredConsumer(config, mockSendWelcomeEmail, logger);
-
       const message: KafkaMessage = {
         offset: "123",
         value: null,
@@ -151,16 +137,29 @@ describe("UserRegisteredConsumer", () => {
         size: 100,
       };
 
-      await (consumer as any).handleMessage(message);
+      await triggerEachMessage(message);
 
-      expect(logger.warn).toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.anything(),
+        "email.consumer.empty_message"
+      );
     });
   });
 
-  describe("retry logic", () => {
-    it("should retry on failure and eventually succeed", async () => {
-      const consumer = new UserRegisteredConsumer(config, mockSendWelcomeEmail, logger);
+  describe("processWithRetry", () => {
+    it("should call sendWelcomeEmail and log success", async () => {
+      const payload = { email: "test@example.com" };
 
+      await (consumer as any).processWithRetry(payload, 1);
+
+      expect(mockSendWelcomeEmail.execute).toHaveBeenCalledOnce();
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.objectContaining({ email: "te***@example.com" }),
+        "email.consumer.processed"
+      );
+    });
+
+    it("should retry on failure and eventually succeed", async () => {
       mockSendWelcomeEmail.execute
         .mockRejectedValueOnce(new Error("Temporary error"))
         .mockRejectedValueOnce(new Error("Temporary error"))
@@ -168,37 +167,180 @@ describe("UserRegisteredConsumer", () => {
 
       const payload = { email: "test@example.com" };
 
-      await (consumer as any).processWithRetry(payload, 1);
+      // Use a no-op delay function to avoid real timeouts
+      const noopDelay = vi.fn().mockResolvedValue(undefined);
+
+      await (consumer as any).processWithRetry(payload, 1, noopDelay);
 
       expect(mockSendWelcomeEmail.execute).toHaveBeenCalledTimes(3);
     });
 
-    it("should stop retrying after max retries exhausted", async () => {
-      const consumer = new UserRegisteredConsumer(config, mockSendWelcomeEmail, logger);
-
+    it("should stop retrying after maxRetries", async () => {
       mockSendWelcomeEmail.execute.mockRejectedValue(new Error("Permanent error"));
 
       const payload = { email: "test@example.com" };
 
-      await (consumer as any).processWithRetry(payload, config.maxRetries);
+      // Use a no-op delay function to avoid real timeouts
+      const noopDelay = vi.fn().mockResolvedValue(undefined);
+
+      await (consumer as any).processWithRetry(payload, config.maxRetries, noopDelay);
 
       expect(logger.error).toHaveBeenCalledWith(
-        expect.objectContaining({ email: "test@example.com", attempts: config.maxRetries }),
+        expect.objectContaining({ email: "te***@example.com", attempts: config.maxRetries }),
         "email.consumer.failed"
+      );
+    });
+  });
+
+  describe("DLQ integration", () => {
+    it("should send message to DLQ when retries exhausted and DLQ is configured", async () => {
+      mockSendWelcomeEmail.execute.mockRejectedValue(new Error("Permanent failure"));
+
+      const mockDlqProducer = {
+        connect: vi.fn().mockResolvedValue(undefined),
+        send: vi.fn().mockResolvedValue(undefined),
+        disconnect: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const consumerWithDlq = new UserRegisteredConsumer(
+        {
+          kafkaConsumer: mockConsumer,
+          topic: "com.test.identity.UserRegistered",
+          dlqTopic: "com.test.identity.EmailDeliveryFailed",
+          maxRetries: 2,
+          initialDelayMs: 10,
+          maxDelayMs: 100,
+        },
+        mockSendWelcomeEmail,
+        logger
+      );
+
+      // Inject the DLQ producer directly
+      (consumerWithDlq as any).dlqProducer = mockDlqProducer;
+
+      const payload = { email: "dlq-test@example.com" };
+      const noopDelay = vi.fn().mockResolvedValue(undefined);
+
+      await (consumerWithDlq as any).processWithRetry(payload, config.maxRetries, noopDelay);
+
+      expect(mockDlqProducer.send).toHaveBeenCalledOnce();
+      expect(mockDlqProducer.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          topic: "com.test.identity.EmailDeliveryFailed",
+          messages: expect.arrayContaining([
+            expect.objectContaining({
+              key: "dlq-test@example.com",
+              value: expect.any(String),
+            }),
+          ]),
+        })
+      );
+
+      const dlqMessage = JSON.parse(mockDlqProducer.send.mock.calls[0][0].messages[0].value);
+      expect(dlqMessage).toMatchObject({
+        originalTopic: "com.test.identity.UserRegistered",
+        payload,
+        error: expect.any(String),
+        failedAt: expect.any(String),
+        attempts: expect.any(Number),
+      });
+
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: "dl***@example.com",
+          dlqTopic: "com.test.identity.EmailDeliveryFailed",
+        }),
+        "email.consumer.sent_to_dlq"
+      );
+    });
+
+    it("should not send to DLQ when dlqTopic is not configured", async () => {
+      mockSendWelcomeEmail.execute.mockRejectedValue(new Error("Permanent failure"));
+
+      const consumerWithoutDlq = new UserRegisteredConsumer(
+        {
+          kafkaConsumer: mockConsumer,
+          topic: "com.test.identity.UserRegistered",
+          maxRetries: 2,
+          initialDelayMs: 10,
+          maxDelayMs: 100,
+        },
+        mockSendWelcomeEmail,
+        logger
+      );
+
+      const payload = { email: "no-dlq@example.com" };
+      const noopDelay = vi.fn().mockResolvedValue(undefined);
+
+      await (consumerWithoutDlq as any).processWithRetry(payload, config.maxRetries, noopDelay);
+
+      expect(logger.info).not.toHaveBeenCalledWith(
+        expect.anything(),
+        "email.consumer.sent_to_dlq"
+      );
+    });
+
+    it("should log error when DLQ send fails", async () => {
+      mockSendWelcomeEmail.execute.mockRejectedValue(new Error("Permanent failure"));
+
+      const mockDlqProducer = {
+        connect: vi.fn().mockResolvedValue(undefined),
+        send: vi.fn().mockRejectedValue(new Error("DLQ unavailable")),
+        disconnect: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const consumerWithDlq = new UserRegisteredConsumer(
+        {
+          kafkaConsumer: mockConsumer,
+          topic: "com.test.identity.UserRegistered",
+          dlqTopic: "com.test.identity.EmailDeliveryFailed",
+          maxRetries: 2,
+          initialDelayMs: 10,
+          maxDelayMs: 100,
+        },
+        mockSendWelcomeEmail,
+        logger
+      );
+
+      (consumerWithDlq as any).dlqProducer = mockDlqProducer;
+
+      const payload = { email: "dlq-fail@example.com" };
+      const noopDelay = vi.fn().mockResolvedValue(undefined);
+
+      await (consumerWithDlq as any).processWithRetry(payload, config.maxRetries, noopDelay);
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ error: expect.any(String) }),
+        "email.consumer.dlq_failed"
       );
     });
   });
 
   describe("isRunning", () => {
     it("should return false initially", () => {
-      const consumer = new UserRegisteredConsumer(config, mockSendWelcomeEmail, logger);
       expect(consumer.isRunning()).toBe(false);
     });
 
     it("should return true after start", async () => {
-      const consumer = new UserRegisteredConsumer(config, mockSendWelcomeEmail, logger);
-      (consumer as any).running = true;
+      await consumer.start();
       expect(consumer.isRunning()).toBe(true);
+    });
+  });
+
+  describe("email redaction", () => {
+    it("should redact email in logs", () => {
+      const redacted = (consumer as any).redactEmail("test.user@example.com");
+      expect(redacted).toBe("te***@example.com");
+    });
+
+    it("should handle invalid email", () => {
+      const redacted = (consumer as any).redactEmail("invalid-email");
+      expect(redacted).toBe("[invalid]");
+    });
+
+    it("should handle empty email", () => {
+      const redacted = (consumer as any).redactEmail("");
+      expect(redacted).toBe("[unknown]");
     });
   });
 });

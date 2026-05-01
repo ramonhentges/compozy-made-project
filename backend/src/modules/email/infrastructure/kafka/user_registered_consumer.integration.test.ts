@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi, beforeEach } from 'vitest';
+import { Kafka } from 'kafkajs';
 import { UserRegisteredConsumer } from './user_registered_consumer';
 import { SendWelcomeEmailHandler } from '../../application/send_welcome_email/handler';
 import { SendGridAdapter } from '../../infrastructure/adapters/sendgrid_adapter';
@@ -22,11 +23,14 @@ describeWithKafka('UserRegisteredConsumer integration with Kafka', () => {
       execute: vi.fn().mockResolvedValue(undefined),
     };
 
+    const kafka = new Kafka({
+      brokers: kafkaBrokers,
+      clientId: 'test-email-consumer-client',
+    });
+
     consumer = new UserRegisteredConsumer(
       {
-        brokers: kafkaBrokers,
-        clientId: 'test-email-consumer-client',
-        groupId: `${groupId}-${Date.now()}`,
+        kafkaConsumer: kafka.consumer({ groupId: `${groupId}-${Date.now()}` }),
         topic: testTopic,
         maxRetries: 3,
         initialDelayMs: 100,
@@ -89,11 +93,11 @@ describe('UserRegisteredConsumer unit behavior', () => {
       .mockRejectedValueOnce(new Error('Another failure'))
       .mockResolvedValueOnce(undefined);
 
+    const mockConsumer = { connect: vi.fn(), subscribe: vi.fn(), run: vi.fn(), disconnect: vi.fn() } as any;
+
     const consumer = new UserRegisteredConsumer(
       {
-        brokers: ['localhost:9092'],
-        clientId: 'test',
-        groupId: 'test',
+        kafkaConsumer: mockConsumer,
         topic: 'test',
         maxRetries: 3,
         initialDelayMs: 10,
@@ -110,11 +114,11 @@ describe('UserRegisteredConsumer unit behavior', () => {
   it('should stop retrying after maxRetries', async () => {
     const mockExecute = vi.fn().mockRejectedValue(new Error('Permanent failure'));
 
+    const mockConsumer = { connect: vi.fn(), subscribe: vi.fn(), run: vi.fn(), disconnect: vi.fn() } as any;
+
     const consumer = new UserRegisteredConsumer(
       {
-        brokers: ['localhost:9092'],
-        clientId: 'test',
-        groupId: 'test',
+        kafkaConsumer: mockConsumer,
         topic: 'test',
         maxRetries: 2,
         initialDelayMs: 10,

@@ -7,7 +7,7 @@ export interface EmailTemplate {
 
 export interface EmailMessage {
   to: string;
-  from: string;
+  from?: string;
   subject: string;
   html?: string;
   text?: string;

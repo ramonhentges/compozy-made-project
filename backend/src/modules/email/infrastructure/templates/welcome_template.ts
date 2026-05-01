@@ -1,4 +1,4 @@
-import { EmailTemplate } from '../value_objects/email_template';
+import { EmailTemplate } from '../../domain/value_objects/email_template';
 
 export class WelcomeTemplate {
   private static escapeHtml(unsafe: string): string {
