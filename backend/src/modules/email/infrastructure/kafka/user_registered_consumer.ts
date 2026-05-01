@@ -16,7 +16,7 @@ export interface KafkaConsumerConfig {
 export interface KafkaProducerConfig {
   brokers: string[];
   clientId: string;
-  sslEnabled?: boolean;
+  ssl?: boolean | import("../../../config").KafkaSslConfig;
 }
 
 export class UserRegisteredConsumer {
@@ -58,7 +58,7 @@ export class UserRegisteredConsumer {
       const kafka = new Kafka({
         brokers: kafkaConfig.brokers,
         clientId: kafkaConfig.clientId,
-        ssl: kafkaConfig.sslEnabled ?? process.env.KAFKA_SSL === 'true',
+        ssl: kafkaConfig.ssl ?? false,
       });
       this.dlqProducer = kafka.producer();
       await this.dlqProducer.connect();

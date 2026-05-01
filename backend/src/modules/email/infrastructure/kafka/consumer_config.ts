@@ -6,7 +6,7 @@ import pino, { Logger } from "pino";
 export interface KafkaProducerConfig {
   brokers: string[];
   clientId: string;
-  sslEnabled?: boolean;
+  ssl?: boolean | import("../../../config").KafkaSslConfig;
 }
 
 export interface EmailKafkaConfig {
@@ -16,7 +16,7 @@ export interface EmailKafkaConfig {
   dlqTopic?: string;
   sessionTimeoutMs: number;
   rebalanceTimeoutMs: number;
-  sslEnabled?: boolean;
+  ssl?: boolean | import("../../../config").KafkaSslConfig;
 }
 
 export interface EmailConsumerRetryConfig {
@@ -51,7 +51,7 @@ export function getEmailConfig(): EmailConfig {
       dlqTopic: process.env.EMAIL_DLQ_TOPIC ?? "com.test.identity.UserRegistered.DLQ",
       sessionTimeoutMs: parseInt(process.env.EMAIL_SESSION_TIMEOUT_MS ?? "30000", 10),
       rebalanceTimeoutMs: parseInt(process.env.EMAIL_REBALANCE_TIMEOUT_MS ?? "60000", 10),
-      sslEnabled: process.env.KAFKA_SSL === "true",
+      ssl: getKafkaSslConfig(),
     },
     retry: {
       maxRetries: parseInt(process.env.EMAIL_MAX_RETRIES ?? "5", 10),
@@ -69,7 +69,7 @@ export function createUserRegisteredConsumer(
   const kafka = new Kafka({
     brokers: config.kafka.brokers,
     clientId: config.kafka.groupId,
-    ssl: config.kafka.sslEnabled ?? process.env.KAFKA_SSL === 'true',
+    ssl: config.kafka.ssl ?? false,
   });
 
   const consumer = kafka.consumer({
@@ -96,7 +96,7 @@ export function getKafkaProducerConfig(config: EmailConfig): KafkaProducerConfig
   return {
     brokers: config.kafka.brokers,
     clientId: `${config.kafka.groupId}-dlq-producer`,
-    sslEnabled: config.kafka.sslEnabled,
+    ssl: config.kafka.ssl,
   };
 }
 
