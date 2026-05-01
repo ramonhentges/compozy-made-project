@@ -42,4 +42,6 @@ export function getIdentityDatabaseConfig(): IdentityDatabaseConfig {
   };
 }
 
-export const identityDbConfig: IdentityDatabaseConfig = getIdentityDatabaseConfig();
+export function getIdentityDbConfig(): IdentityDatabaseConfig {
+  return getIdentityDatabaseConfig();
+}

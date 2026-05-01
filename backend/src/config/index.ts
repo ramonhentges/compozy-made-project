@@ -1,6 +1,6 @@
 import {
   IdentityDatabaseConfig,
-  identityDbConfig,
+  getIdentityDatabaseConfig,
 } from "./databases/identity_context";
 
 export interface SendGridConfig {
@@ -110,60 +110,62 @@ export function getKafkaSslConfig(): boolean | KafkaSslConfig {
   return false;
 }
 
-export const config: AppConfig = {
-  port: parseInt(process.env.PORT ?? "3000", 10),
-  identityDatabase: identityDbConfig,
-  jwt: {
-    secret: getRequiredEnv("JWT_SECRET", "dev-secret-do-not-use-in-production"),
-    accessExpiry: process.env.JWT_ACCESS_EXPIRY ?? "15m",
-    refreshExpiry: process.env.JWT_REFRESH_EXPIRY ?? "7d",
-  },
-  bcrypt: {
-    rounds: parseInt(process.env.BCRYPT_ROUNDS ?? "12", 10),
-  },
-  sendgrid: {
-    apiKey: getRequiredEnv("SENDGRID_API_KEY"),
-    defaultFrom: process.env.SENDGRID_DEFAULT_FROM ?? "noreply@example.com",
-  },
-  kafka: {
-    brokers: parseKafkaBrokers(),
-    clientId: process.env.KAFKA_CLIENT_ID ?? "identity-service",
-    identityOutboxTopic:
-      process.env.IDENTITY_OUTBOX_TOPIC ?? "com.test.identity",
-    ssl: getKafkaSslConfig(),
-  },
-  outboxRelay: {
-    pollIntervalMs: parseInt(
-      process.env.OUTBOX_RELAY_POLL_INTERVAL_MS ?? "1000",
-      10,
-    ),
-    batchSize: parseInt(process.env.OUTBOX_RELAY_BATCH_SIZE ?? "100", 10),
-    maxAttempts: parseInt(process.env.OUTBOX_RELAY_MAX_ATTEMPTS ?? "5", 10),
-    backoffBaseMs: parseInt(
-      process.env.OUTBOX_RELAY_BACKOFF_BASE_MS ?? "1000",
-      10,
-    ),
-    backoffMaxMs: parseInt(
-      process.env.OUTBOX_RELAY_BACKOFF_MAX_MS ?? "60000",
-      10,
-    ),
-  },
-  email: {
+export function getConfig(): AppConfig {
+  return {
+    port: parseInt(process.env.PORT ?? "3000", 10),
+    identityDatabase: getIdentityDatabaseConfig(),
+    jwt: {
+      secret: getRequiredEnv("JWT_SECRET", "dev-secret-do-not-use-in-production"),
+      accessExpiry: process.env.JWT_ACCESS_EXPIRY ?? "15m",
+      refreshExpiry: process.env.JWT_REFRESH_EXPIRY ?? "7d",
+    },
+    bcrypt: {
+      rounds: parseInt(process.env.BCRYPT_ROUNDS ?? "12", 10),
+    },
     sendgrid: {
       apiKey: getRequiredEnv("SENDGRID_API_KEY"),
-      fromEmail: process.env.EMAIL_FROM_ADDRESS ?? "noreply@acme-corp.com",
-      fromName: process.env.EMAIL_FROM_NAME ?? "Acme Corp",
+      defaultFrom: process.env.SENDGRID_DEFAULT_FROM ?? "noreply@example.com",
     },
     kafka: {
       brokers: parseKafkaBrokers(),
-      groupId: process.env.EMAIL_CONSUMER_GROUP_ID ?? "email-service",
-      topic: process.env.EMAIL_TOPIC ?? "com.test.identity.UserRegistered",
+      clientId: process.env.KAFKA_CLIENT_ID ?? "identity-service",
+      identityOutboxTopic:
+        process.env.IDENTITY_OUTBOX_TOPIC ?? "com.test.identity",
       ssl: getKafkaSslConfig(),
     },
-    retry: {
-      maxRetries: parseInt(process.env.EMAIL_MAX_RETRIES ?? "5", 10),
-      initialDelayMs: parseInt(process.env.EMAIL_RETRY_INITIAL_DELAY_MS ?? "1000", 10),
-      maxDelayMs: parseInt(process.env.EMAIL_RETRY_MAX_DELAY_MS ?? "60000", 10),
+    outboxRelay: {
+      pollIntervalMs: parseInt(
+        process.env.OUTBOX_RELAY_POLL_INTERVAL_MS ?? "1000",
+        10,
+      ),
+      batchSize: parseInt(process.env.OUTBOX_RELAY_BATCH_SIZE ?? "100", 10),
+      maxAttempts: parseInt(process.env.OUTBOX_RELAY_MAX_ATTEMPTS ?? "5", 10),
+      backoffBaseMs: parseInt(
+        process.env.OUTBOX_RELAY_BACKOFF_BASE_MS ?? "1000",
+        10,
+      ),
+      backoffMaxMs: parseInt(
+        process.env.OUTBOX_RELAY_BACKOFF_MAX_MS ?? "60000",
+        10,
+      ),
     },
-  },
-};
+    email: {
+      sendgrid: {
+        apiKey: getRequiredEnv("SENDGRID_API_KEY"),
+        fromEmail: process.env.EMAIL_FROM_ADDRESS ?? "noreply@acme-corp.com",
+        fromName: process.env.EMAIL_FROM_NAME ?? "Acme Corp",
+      },
+      kafka: {
+        brokers: parseKafkaBrokers(),
+        groupId: process.env.EMAIL_CONSUMER_GROUP_ID ?? "email-service",
+        topic: process.env.EMAIL_TOPIC ?? "com.test.identity.UserRegistered",
+        ssl: getKafkaSslConfig(),
+      },
+      retry: {
+        maxRetries: parseInt(process.env.EMAIL_MAX_RETRIES ?? "5", 10),
+        initialDelayMs: parseInt(process.env.EMAIL_RETRY_INITIAL_DELAY_MS ?? "1000", 10),
+        maxDelayMs: parseInt(process.env.EMAIL_RETRY_MAX_DELAY_MS ?? "60000", 10),
+      },
+    },
+  };
+}

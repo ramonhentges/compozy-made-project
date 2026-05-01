@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { getIdentityDatabaseConfig, identityDbConfig, IdentityDatabaseConfig } from './identity_context';
+import { getIdentityDatabaseConfig, getIdentityDbConfig, IdentityDatabaseConfig } from './identity_context';
 
 describe('identity_context config', () => {
   const originalEnv = { ...process.env };
@@ -88,17 +88,15 @@ describe('identity_context config', () => {
     });
   });
 
-  describe('identityDbConfig singleton', () => {
-    it('should be defined', () => {
-      expect(identityDbConfig).toBeDefined();
-    });
-
-    it('should have all required fields', () => {
-      expect(identityDbConfig.host).toBeDefined();
-      expect(identityDbConfig.port).toBeDefined();
-      expect(identityDbConfig.database).toBeDefined();
-      expect(identityDbConfig.user).toBeDefined();
-      expect(identityDbConfig.password).toBeDefined();
+  describe('getIdentityDbConfig', () => {
+    it('should return a valid config', () => {
+      process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
+      const config = getIdentityDbConfig();
+      expect(config.host).toBeDefined();
+      expect(config.port).toBeDefined();
+      expect(config.database).toBeDefined();
+      expect(config.user).toBeDefined();
+      expect(config.password).toBeDefined();
     });
   });
 });

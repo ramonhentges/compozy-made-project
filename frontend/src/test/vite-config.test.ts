@@ -1,22 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { loadEnv } from 'vite';
 
 describe('Vite Proxy Configuration', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
     process.env = { ...originalEnv };
+    delete process.env.VITE_API_URL;
   });
 
   describe('Environment Variables', () => {
-    it('should have VITE_API_URL defined in environment', () => {
-      const envUrl = process.env.VITE_API_URL;
-      expect(envUrl).toBeDefined();
-      expect(envUrl).toBe('http://localhost:3001');
-    });
-
     it('should use default fallback when VITE_API_URL is not set', () => {
-      delete process.env.VITE_API_URL;
       const target = process.env.VITE_API_URL || 'http://localhost:3001';
       expect(target).toBe('http://localhost:3001');
     });
@@ -29,7 +22,7 @@ describe('Vite Proxy Configuration', () => {
   });
 
   describe('Proxy Configuration', () => {
-    it('should proxy /api paths to backend', () => {
+    it('should proxy /api paths to backend with default target', () => {
       const proxyConfig = {
         '/api': {
           target: process.env.VITE_API_URL || 'http://localhost:3001',

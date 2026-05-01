@@ -6,6 +6,7 @@ describe('config', () => {
 
   beforeEach(() => {
     process.env = { ...originalEnv };
+    process.env.SENDGRID_API_KEY = 'test-sendgrid-key';
   });
 
   afterEach(() => {
@@ -50,6 +51,7 @@ describe('config', () => {
 
     beforeEach(() => {
       process.env = { ...originalEnv };
+      process.env.SENDGRID_API_KEY = 'test-sendgrid-key';
     });
 
     afterEach(() => {
@@ -62,7 +64,8 @@ describe('config', () => {
       process.env.JWT_SECRET = 'test-secret';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.kafka.brokers).toEqual(['localhost:9092']);
     });
@@ -73,7 +76,8 @@ describe('config', () => {
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.KAFKA_BROKERS = 'broker1:9092, broker2:9092 , broker3:9092';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.kafka.brokers).toEqual(['broker1:9092', 'broker2:9092', 'broker3:9092']);
     });
@@ -83,7 +87,8 @@ describe('config', () => {
       process.env.JWT_SECRET = 'test-secret';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.kafka.clientId).toBe('identity-service');
     });
@@ -94,7 +99,8 @@ describe('config', () => {
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.KAFKA_CLIENT_ID = 'custom-client-id';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.kafka.clientId).toBe('custom-client-id');
     });
@@ -104,7 +110,8 @@ describe('config', () => {
       process.env.JWT_SECRET = 'test-secret';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.kafka.identityOutboxTopic).toBe('com.test.identity');
     });
@@ -115,7 +122,8 @@ describe('config', () => {
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.IDENTITY_OUTBOX_TOPIC = 'custom-topic';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.kafka.identityOutboxTopic).toBe('custom-topic');
     });
@@ -126,6 +134,7 @@ describe('config', () => {
 
     beforeEach(() => {
       process.env = { ...originalEnv };
+      process.env.SENDGRID_API_KEY = 'test-sendgrid-key';
     });
 
     afterEach(() => {
@@ -138,7 +147,8 @@ describe('config', () => {
       process.env.JWT_SECRET = 'test-secret';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.outboxRelay.pollIntervalMs).toBe(1000);
     });
@@ -149,7 +159,8 @@ describe('config', () => {
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.OUTBOX_RELAY_POLL_INTERVAL_MS = '2000';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.outboxRelay.pollIntervalMs).toBe(2000);
     });
@@ -159,7 +170,8 @@ describe('config', () => {
       process.env.JWT_SECRET = 'test-secret';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.outboxRelay.batchSize).toBe(100);
     });
@@ -170,7 +182,8 @@ describe('config', () => {
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.OUTBOX_RELAY_BATCH_SIZE = '50';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.outboxRelay.batchSize).toBe(50);
     });
@@ -180,7 +193,8 @@ describe('config', () => {
       process.env.JWT_SECRET = 'test-secret';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.outboxRelay.maxAttempts).toBe(5);
     });
@@ -191,7 +205,8 @@ describe('config', () => {
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.OUTBOX_RELAY_MAX_ATTEMPTS = '10';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.outboxRelay.maxAttempts).toBe(10);
     });
@@ -201,7 +216,8 @@ describe('config', () => {
       process.env.JWT_SECRET = 'test-secret';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.outboxRelay.backoffBaseMs).toBe(1000);
     });
@@ -212,7 +228,8 @@ describe('config', () => {
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.OUTBOX_RELAY_BACKOFF_BASE_MS = '500';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.outboxRelay.backoffBaseMs).toBe(500);
     });
@@ -222,7 +239,8 @@ describe('config', () => {
       process.env.JWT_SECRET = 'test-secret';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.outboxRelay.backoffMaxMs).toBe(60000);
     });
@@ -233,7 +251,8 @@ describe('config', () => {
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.OUTBOX_RELAY_BACKOFF_MAX_MS = '300000';
 
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
 
       expect(freshConfig.outboxRelay.backoffMaxMs).toBe(300000);
     });
@@ -245,7 +264,8 @@ describe('config', () => {
       process.env.JWT_SECRET = 'test-secret';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
       
       expect(freshConfig.port).toBe(3000);
       expect(freshConfig.identityDatabase.host).toBe('localhost');
@@ -259,7 +279,8 @@ describe('config', () => {
       process.env.JWT_SECRET = 'test-secret';
       process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
       
       expect(freshConfig.port).toBe(4000);
     });
@@ -270,7 +291,8 @@ describe('config', () => {
       process.env.JWT_SECRET = 'test-secret';
       process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       
-      const { config: freshConfig } = await import('./index');
+      const { getConfig } = await import('./index');
+      const freshConfig = getConfig();
       
       expect(freshConfig.bcrypt.rounds).toBe(10);
     });

@@ -60,12 +60,13 @@ describe('Identity Context Migration Folder Structure', () => {
 
     it('should have matching outbox events down migration', () => {
       const files = fs.readdirSync(migrationsDir);
-      const downMigration = files.find(f =>
-        f.includes('outbox_events') && f.includes('down') && f.endsWith('.sql')
+      const upMigration = files.find(f =>
+        f.includes('outbox_events') && !f.includes('down') && f.endsWith('.sql')
       );
 
-      expect(downMigration).toBeDefined();
-      expect(downMigration).toMatch(/^\d{14}_outbox_events_down\.sql$/);
+      expect(upMigration).toBeDefined();
+      const content = fs.readFileSync(path.join(migrationsDir, upMigration as string), 'utf-8');
+      expect(content).toContain('-- Down Migration');
     });
   });
 });

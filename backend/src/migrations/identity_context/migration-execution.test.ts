@@ -12,12 +12,19 @@ describe('Migration Execution - Identity Context', () => {
     const migration = files.find(f =>
       f.includes(namePart) &&
       f.endsWith('.sql') &&
-      (isDown ? f.includes('down') : !f.includes('down'))
+      !f.includes('down')
     );
 
     expect(migration).toBeDefined();
 
-    return fs.readFileSync(path.join(migrationsDir, migration as string), 'utf-8');
+    const content = fs.readFileSync(path.join(migrationsDir, migration as string), 'utf-8');
+    if (!isDown) {
+      return content;
+    }
+
+    const downSection = content.split('-- Down Migration')[1];
+    expect(downSection).toBeDefined();
+    return downSection as string;
   };
 
   beforeEach(() => {
@@ -83,12 +90,12 @@ describe('Migration Execution - Identity Context', () => {
       expect(fs.existsSync(configPath)).toBe(true);
     });
 
-    it('config should export identityDbConfig', () => {
+    it('config should export getIdentityDbConfig', () => {
       const configContent = fs.readFileSync(
         path.resolve(process.cwd(), 'src/config/databases/identity_context.ts'),
         'utf-8'
       );
-      expect(configContent).toContain('identityDbConfig');
+      expect(configContent).toContain('getIdentityDbConfig');
     });
 
     it('config should export getIdentityDatabaseConfig', () => {
@@ -109,8 +116,10 @@ describe('Migration Execution - Identity Context', () => {
 
     it('should have initial schema down migration', () => {
       const files = fs.readdirSync(migrationsDir);
-      const downMigration = files.find(f => f.includes('initial_schema') && f.includes('down') && f.endsWith('.sql'));
-      expect(downMigration).toBeDefined();
+      const upMigration = files.find(f => f.includes('initial_schema') && !f.includes('down') && f.endsWith('.sql'));
+      expect(upMigration).toBeDefined();
+      const content = fs.readFileSync(path.join(migrationsDir, upMigration as string), 'utf-8');
+      expect(content).toContain('-- Down Migration');
     });
 
     it('should have both up and down migrations', () => {
@@ -128,9 +137,11 @@ describe('Migration Execution - Identity Context', () => {
 
     it('should have outbox events down migration', () => {
       const files = fs.readdirSync(migrationsDir);
-      const downMigration = files.find(f => f.includes('outbox_events') && f.includes('down') && f.endsWith('.sql'));
+      const upMigration = files.find(f => f.includes('outbox_events') && !f.includes('down') && f.endsWith('.sql'));
 
-      expect(downMigration).toBeDefined();
+      expect(upMigration).toBeDefined();
+      const content = fs.readFileSync(path.join(migrationsDir, upMigration as string), 'utf-8');
+      expect(content).toContain('-- Down Migration');
     });
   });
 

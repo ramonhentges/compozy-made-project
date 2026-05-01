@@ -16,12 +16,14 @@ import { RegisterUserHandler } from "@modules/identity/application/register_user
 import { LoginUserHandler } from "@modules/identity/application/login_user/handler";
 import { LogoutUserHandler } from "@modules/identity/application/logout_user/handler";
 import { identityRoutes } from "@modules/identity/infrastructure/http/routes";
-import { config } from "@config/index";
+import { getConfig } from "@config/index";
 
 let server: FastifyInstance | null = null;
 let relay: OutboxRelay | null = null;
 
 async function createServer(): Promise<FastifyInstance> {
+  const config = getConfig();
+
   const db = createDatabase(config.identityDatabase);
 
   if (!config.jwt.secret || config.jwt.secret.length < 32) {
@@ -78,6 +80,8 @@ async function createServer(): Promise<FastifyInstance> {
 
 export async function startServer(): Promise<void> {
   server = await createServer();
+
+  const config = getConfig();
 
   await server.listen({ port: config.port, host: "0.0.0.0" });
 
