@@ -17,6 +17,7 @@ import { LoginUserHandler } from "@modules/identity/application/login_user/handl
 import { LogoutUserHandler } from "@modules/identity/application/logout_user/handler";
 import { identityRoutes } from "@modules/identity/infrastructure/http/routes";
 import { getConfig } from "@config/index";
+import "./email_worker";
 
 let server: FastifyInstance | null = null;
 let relay: OutboxRelay | null = null;
