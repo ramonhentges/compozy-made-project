@@ -223,7 +223,7 @@ describe("UserRegisteredConsumer", () => {
           topic: "com.test.identity.EmailDeliveryFailed",
           messages: expect.arrayContaining([
             expect.objectContaining({
-              key: "dlq-test@example.com",
+              key: "dl***@example.com",
               value: expect.any(String),
             }),
           ]),
@@ -233,7 +233,7 @@ describe("UserRegisteredConsumer", () => {
       const dlqMessage = JSON.parse(mockDlqProducer.send.mock.calls[0][0].messages[0].value);
       expect(dlqMessage).toMatchObject({
         originalTopic: "com.test.identity.UserRegistered",
-        payload,
+        payload: { email: "dl***@example.com" },
         error: expect.any(String),
         failedAt: expect.any(String),
         attempts: expect.any(Number),

@@ -16,7 +16,7 @@ export interface KafkaConsumerConfig {
 export interface KafkaProducerConfig {
   brokers: string[];
   clientId: string;
-  ssl?: boolean;
+  ssl?: boolean | import("../../../../config").KafkaSslConfig;
 }
 
 export class UserRegisteredConsumer {
@@ -137,13 +137,14 @@ export class UserRegisteredConsumer {
         // Send to DLQ if configured
         if (this.dlqTopic && this.dlqProducer) {
           try {
+            const redactedPayload = { ...payload, email: this.redactEmail(payload.email) };
             await this.dlqProducer.send({
               topic: this.dlqTopic,
               messages: [{
-                key: payload.email,
+                key: this.redactEmail(payload.email),
                 value: JSON.stringify({
                   originalTopic: this.topic,
-                  payload,
+                  payload: redactedPayload,
                   error: this.redactError(error),
                   failedAt: new Date().toISOString(),
                   attempts: attempt,
