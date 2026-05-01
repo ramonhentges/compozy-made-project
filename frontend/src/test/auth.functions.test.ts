@@ -14,6 +14,8 @@ describe('auth.functions', () => {
   });
 
   describe('registerFn', () => {
+    const validPassword = 'Password123!';
+
     it('calls POST /register with validated data', async () => {
       const mockUser = { id: '1', email: 'test@example.com', name: 'Test User' };
       mockFetch.mockResolvedValueOnce({
@@ -24,7 +26,7 @@ describe('auth.functions', () => {
       const result = await registerFn({
         email: 'test@example.com',
         name: 'Test User',
-        password: 'password123',
+        password: validPassword,
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
@@ -33,7 +35,7 @@ describe('auth.functions', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ email: 'test@example.com', name: 'Test User', password: 'password123' }),
+          body: JSON.stringify({ email: 'test@example.com', name: 'Test User', password: validPassword }),
         })
       );
       expect(result).toEqual({ user: mockUser });
@@ -48,13 +50,13 @@ describe('auth.functions', () => {
       } as Response);
 
       await expect(
-        registerFn({ email: 'exists@example.com', name: 'Test', password: 'password123' })
+        registerFn({ email: 'exists@example.com', name: 'Test', password: validPassword })
       ).rejects.toThrow(AuthError);
     });
 
     it('validates input with registerSchema', async () => {
       await expect(
-        registerFn({ email: 'invalid-email', name: 'Test', password: 'password123' })
+        registerFn({ email: 'invalid-email', name: 'Test', password: validPassword })
       ).rejects.toThrow('Invalid email address');
     });
 
@@ -62,6 +64,30 @@ describe('auth.functions', () => {
       await expect(
         registerFn({ email: 'test@example.com', name: 'Test', password: 'short' })
       ).rejects.toThrow('Password must be at least 8 characters');
+    });
+
+    it('validates password complexity (uppercase)', async () => {
+      await expect(
+        registerFn({ email: 'test@example.com', name: 'Test', password: 'password123!' })
+      ).rejects.toThrow('Password must contain at least one uppercase letter');
+    });
+
+    it('validates password complexity (lowercase)', async () => {
+      await expect(
+        registerFn({ email: 'test@example.com', name: 'Test', password: 'PASSWORD123!' })
+      ).rejects.toThrow('Password must contain at least one lowercase letter');
+    });
+
+    it('validates password complexity (number)', async () => {
+      await expect(
+        registerFn({ email: 'test@example.com', name: 'Test', password: 'Password!!!' })
+      ).rejects.toThrow('Password must contain at least one number');
+    });
+
+    it('validates password complexity (special character)', async () => {
+      await expect(
+        registerFn({ email: 'test@example.com', name: 'Test', password: 'Password123' })
+      ).rejects.toThrow('Password must contain at least one special character');
     });
   });
 

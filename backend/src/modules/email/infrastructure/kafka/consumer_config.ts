@@ -2,11 +2,12 @@ import { Kafka, Consumer } from "kafkajs";
 import { UserRegisteredConsumer } from "./user_registered_consumer";
 import { ISendWelcomeEmailUseCase } from "../../application/send_welcome_email/port";
 import pino, { Logger } from "pino";
+import { KafkaSslConfig, getKafkaSslConfig } from "../../../config";
 
 export interface KafkaProducerConfig {
   brokers: string[];
   clientId: string;
-  ssl?: boolean;
+  ssl?: boolean | KafkaSslConfig;
 }
 
 export interface EmailKafkaConfig {
@@ -16,7 +17,7 @@ export interface EmailKafkaConfig {
   dlqTopic?: string;
   sessionTimeoutMs: number;
   rebalanceTimeoutMs: number;
-  ssl?: boolean;
+  ssl?: boolean | KafkaSslConfig;
 }
 
 export interface EmailConsumerRetryConfig {
@@ -51,7 +52,7 @@ export function getEmailConfig(): EmailConfig {
       dlqTopic: process.env.EMAIL_DLQ_TOPIC ?? "com.test.identity.UserRegistered.DLQ",
       sessionTimeoutMs: parseInt(process.env.EMAIL_SESSION_TIMEOUT_MS ?? "30000", 10),
       rebalanceTimeoutMs: parseInt(process.env.EMAIL_REBALANCE_TIMEOUT_MS ?? "60000", 10),
-      ssl: isKafkaSslEnabled(),
+      ssl: getKafkaSslConfig(),
     },
     retry: {
       maxRetries: parseInt(process.env.EMAIL_MAX_RETRIES ?? "5", 10),
@@ -109,10 +110,6 @@ function parseKafkaBrokers(): string[] {
     .split(",")
     .map((b) => b.trim())
     .filter(Boolean);
-}
-
-function isKafkaSslEnabled(): boolean {
-  return process.env.KAFKA_SSL === "true";
 }
 
 function getRequiredEnv(name: string, fallback?: string): string {

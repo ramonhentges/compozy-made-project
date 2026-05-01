@@ -30,7 +30,7 @@ export function getEmailConfig() {
       dlqTopic: process.env.EMAIL_DLQ_TOPIC || 'com.test.identity.UserRegistered.DLQ',
       sessionTimeoutMs: parseInt(process.env.EMAIL_SESSION_TIMEOUT_MS || '30000', 10),
       rebalanceTimeoutMs: parseInt(process.env.EMAIL_REBALANCE_TIMEOUT_MS || '60000', 10),
-      sslEnabled: isKafkaSslEnabled(),
+      ssl: isKafkaSslEnabled(),
     } as EmailKafkaConfig,
     retry: {
       maxRetries: parseInt(process.env.EMAIL_MAX_RETRIES || '5', 10),

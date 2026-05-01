@@ -2,11 +2,13 @@ import { describe, it, expect } from "vitest";
 import { registerSchema, loginSchema } from "../api/auth.schemas";
 
 describe("registerSchema", () => {
+  const validPassword = "Password123!";
+
   it("happy path: valid register input passes", () => {
     const validInput = {
       email: "test@example.com",
       name: "John Doe",
-      password: "password123",
+      password: validPassword,
     };
     const result = registerSchema.safeParse(validInput);
     expect(result.success).toBe(true);
@@ -16,7 +18,7 @@ describe("registerSchema", () => {
     const invalidInput = {
       email: "not-an-email",
       name: "John Doe",
-      password: "password123",
+      password: validPassword,
     };
     const result = registerSchema.safeParse(invalidInput);
     expect(result.success).toBe(false);
@@ -29,7 +31,7 @@ describe("registerSchema", () => {
     const invalidInput = {
       email: "test@example.com",
       name: "J",
-      password: "password123",
+      password: validPassword,
     };
     const result = registerSchema.safeParse(invalidInput);
     expect(result.success).toBe(false);
@@ -42,7 +44,7 @@ describe("registerSchema", () => {
     const invalidInput = {
       email: "test@example.com",
       name: "J".repeat(101),
-      password: "password123",
+      password: validPassword,
     };
     const result = registerSchema.safeParse(invalidInput);
     expect(result.success).toBe(false);
@@ -64,10 +66,62 @@ describe("registerSchema", () => {
     }
   });
 
+  it("edge case: password missing uppercase fails", () => {
+    const invalidInput = {
+      email: "test@example.com",
+      name: "John Doe",
+      password: "password123!",
+    };
+    const result = registerSchema.safeParse(invalidInput);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].path).toContain("password");
+    }
+  });
+
+  it("edge case: password missing lowercase fails", () => {
+    const invalidInput = {
+      email: "test@example.com",
+      name: "John Doe",
+      password: "PASSWORD123!",
+    };
+    const result = registerSchema.safeParse(invalidInput);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].path).toContain("password");
+    }
+  });
+
+  it("edge case: password missing number fails", () => {
+    const invalidInput = {
+      email: "test@example.com",
+      name: "John Doe",
+      password: "Password!!!",
+    };
+    const result = registerSchema.safeParse(invalidInput);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].path).toContain("password");
+    }
+  });
+
+  it("edge case: password missing special character fails", () => {
+    const invalidInput = {
+      email: "test@example.com",
+      name: "John Doe",
+      password: "Password123",
+    };
+    const result = registerSchema.safeParse(invalidInput);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].path).toContain("password");
+    }
+  });
+
   it("edge case: missing email fails", () => {
     const invalidInput = {
       name: "John Doe",
-      password: "password123",
+      password: validPassword,
     };
     const result = registerSchema.safeParse(invalidInput);
     expect(result.success).toBe(false);
@@ -76,7 +130,7 @@ describe("registerSchema", () => {
   it("edge case: missing name fails", () => {
     const invalidInput = {
       email: "test@example.com",
-      password: "password123",
+      password: validPassword,
     };
     const result = registerSchema.safeParse(invalidInput);
     expect(result.success).toBe(false);

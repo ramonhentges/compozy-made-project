@@ -48,6 +48,8 @@ export function RegisterPage() {
       if (error instanceof AuthError) {
         if (error.status === 409) {
           form.setError('email', { message: 'This email is already registered' });
+        } else if (error.status === 400 && error.message === 'Password does not meet complexity requirements') {
+          form.setError('password', { message: error.message });
         } else {
           setApiError(error.message);
         }
