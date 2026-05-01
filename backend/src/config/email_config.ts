@@ -1,22 +1,5 @@
 import { getRequiredEnv } from '../config/index';
-
-export interface EmailConfig {
-  sendgrid: {
-    apiKey: string;
-    fromEmail: string;
-    fromName: string;
-  };
-  kafka: {
-    brokers: string[];
-    groupId: string;
-    topic: string;
-  };
-  retry: {
-    maxRetries: number;
-    initialDelayMs: number;
-    maxDelayMs: number;
-  };
-}
+import { EmailKafkaConfig, EmailConsumerRetryConfig } from '../modules/email/infrastructure/kafka/consumer_config';
 
 function parseKafkaBrokers(): string[] {
   const brokers = process.env.KAFKA_BROKERS;
@@ -29,7 +12,11 @@ function parseKafkaBrokers(): string[] {
     .filter(Boolean);
 }
 
-export function getEmailConfig(): EmailConfig {
+function isKafkaSslEnabled(): boolean {
+  return process.env.KAFKA_SSL === 'true';
+}
+
+export function getEmailConfig() {
   return {
     sendgrid: {
       apiKey: getRequiredEnv('SENDGRID_API_KEY'),
@@ -40,11 +27,15 @@ export function getEmailConfig(): EmailConfig {
       brokers: parseKafkaBrokers(),
       groupId: process.env.EMAIL_CONSUMER_GROUP_ID || 'email-service',
       topic: process.env.EMAIL_TOPIC || 'com.test.identity.UserRegistered',
-    },
+      dlqTopic: process.env.EMAIL_DLQ_TOPIC || 'com.test.identity.UserRegistered.DLQ',
+      sessionTimeoutMs: parseInt(process.env.EMAIL_SESSION_TIMEOUT_MS || '30000', 10),
+      rebalanceTimeoutMs: parseInt(process.env.EMAIL_REBALANCE_TIMEOUT_MS || '60000', 10),
+      sslEnabled: isKafkaSslEnabled(),
+    } as EmailKafkaConfig,
     retry: {
       maxRetries: parseInt(process.env.EMAIL_MAX_RETRIES || '5', 10),
       initialDelayMs: parseInt(process.env.EMAIL_RETRY_INITIAL_MS || '1000', 10),
       maxDelayMs: parseInt(process.env.EMAIL_RETRY_MAX_DELAY_MS || '60000', 10),
-    },
+    } as EmailConsumerRetryConfig,
   };
 }

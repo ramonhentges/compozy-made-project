@@ -1,35 +1,44 @@
-import { Kafka, Consumer, KafkaMessage } from 'kafkajs';
+import { Consumer, KafkaMessage, Producer, Kafka } from 'kafkajs';
 import { ISendWelcomeEmailUseCase } from '../../application/send_welcome_email/port';
 import { SendWelcomeEmailCommand } from '../../application/send_welcome_email/command';
 import pino, { Logger } from 'pino';
+import { EmailAddress, InvalidEmailAddressError } from '../../domain/value_objects/email_address';
 
 export interface KafkaConsumerConfig {
-  brokers: string[];
-  clientId: string;
-  groupId: string;
+  kafkaConsumer: Consumer;
   topic: string;
+  dlqTopic?: string;
   maxRetries: number;
   initialDelayMs: number;
   maxDelayMs: number;
 }
 
+export interface KafkaProducerConfig {
+  brokers: string[];
+  clientId: string;
+  sslEnabled?: boolean;
+}
+
 export class UserRegisteredConsumer {
   private readonly consumer: Consumer;
   private readonly topic: string;
+  private readonly dlqTopic: string | undefined;
   private readonly sendWelcomeEmail: ISendWelcomeEmailUseCase;
   private readonly maxRetries: number;
   private readonly initialDelayMs: number;
   private readonly maxDelayMs: number;
   private readonly logger: Logger;
   private running = false;
+  private dlqProducer: Producer | undefined;
 
-  constructor(config: KafkaConsumerConfig, sendWelcomeEmail: ISendWelcomeEmailUseCase, logger?: Logger) {
-    const kafka = new Kafka({
-      brokers: config.brokers,
-      clientId: config.clientId,
-    });
-    this.consumer = kafka.consumer({ groupId: config.groupId });
+  constructor(
+    config: KafkaConsumerConfig,
+    sendWelcomeEmail: ISendWelcomeEmailUseCase,
+    logger?: Logger
+  ) {
+    this.consumer = config.kafkaConsumer;
     this.topic = config.topic;
+    this.dlqTopic = config.dlqTopic;
     this.sendWelcomeEmail = sendWelcomeEmail;
     this.maxRetries = config.maxRetries;
     this.initialDelayMs = config.initialDelayMs;
@@ -37,12 +46,25 @@ export class UserRegisteredConsumer {
     this.logger = logger || pino();
   }
 
-  async start(): Promise<void> {
+  async start(kafkaConfig?: KafkaProducerConfig): Promise<void> {
     if (this.running) {
       return;
     }
 
     await this.consumer.connect();
+
+    // Initialize DLQ producer if DLQ topic is configured
+    if (this.dlqTopic && kafkaConfig) {
+      const kafka = new Kafka({
+        brokers: kafkaConfig.brokers,
+        clientId: kafkaConfig.clientId,
+        ssl: kafkaConfig.sslEnabled,
+      });
+      this.dlqProducer = kafka.producer();
+      await this.dlqProducer.connect();
+      this.logger.info({ dlqTopic: this.dlqTopic }, 'email.consumer.dlq_initialized');
+    }
+
     await this.consumer.subscribe({ topic: this.topic, fromBeginning: true });
 
     this.running = true;
@@ -62,6 +84,11 @@ export class UserRegisteredConsumer {
     this.running = false;
     this.logger.info({}, 'email.consumer.stopped');
     await this.consumer.disconnect();
+
+    if (this.dlqProducer) {
+      await this.dlqProducer.disconnect();
+      this.logger.info({}, 'email.consumer.dlq_producer_stopped');
+    }
   }
 
   private async handleMessage(message: KafkaMessage): Promise<void> {
@@ -74,15 +101,24 @@ export class UserRegisteredConsumer {
       }
 
       const payload = JSON.parse(message.value.toString());
-      this.logger.info({ messageId, email: payload.email }, 'email.consumer.message_received');
+
+      // Validate email using EmailAddress value object
+      try {
+        EmailAddress.create(payload.email);
+      } catch (validationError) {
+        this.logger.warn({ messageId, email: this.redactEmail(payload.email) }, 'email.consumer.invalid_email');
+        return;
+      }
+
+      this.logger.info({ messageId, email: this.redactEmail(payload.email) }, 'email.consumer.message_received');
 
       await this.processWithRetry(payload);
     } catch (error) {
-      this.logger.error({ messageId, error: String(error).substring(0, 500) }, 'email.consumer.message_error');
+      this.logger.error({ messageId, error: this.redactError(error) }, 'email.consumer.message_error');
     }
   }
 
-  private async processWithRetry(payload: { email: string; name?: string }, attempt = 1): Promise<void> {
+  private async processWithRetry(payload: { email: string; name?: string }, attempt = 1, delayFn?: (ms: number) => Promise<void>): Promise<void> {
     try {
       const command: SendWelcomeEmailCommand = {
         email: payload.email,
@@ -90,28 +126,78 @@ export class UserRegisteredConsumer {
       };
 
       await this.sendWelcomeEmail.execute(command);
-      this.logger.info({ email: payload.email }, 'email.consumer.processed');
+      this.logger.info({ email: this.redactEmail(payload.email) }, 'email.consumer.processed');
     } catch (error) {
       if (attempt >= this.maxRetries) {
         this.logger.error(
-          { email: payload.email, attempts: attempt, error: String(error).substring(0, 500) },
+          { email: this.redactEmail(payload.email), attempts: attempt, error: this.redactError(error) },
           'email.consumer.failed'
         );
+
+        // Send to DLQ if configured
+        if (this.dlqTopic && this.dlqProducer) {
+          try {
+            await this.dlqProducer.send({
+              topic: this.dlqTopic,
+              messages: [{
+                key: payload.email,
+                value: JSON.stringify({
+                  originalTopic: this.topic,
+                  payload,
+                  error: this.redactError(error),
+                  failedAt: new Date().toISOString(),
+                  attempts: attempt,
+                }),
+              }],
+            });
+            this.logger.info({ email: this.redactEmail(payload.email), dlqTopic: this.dlqTopic }, 'email.consumer.sent_to_dlq');
+          } catch (dlqError) {
+            this.logger.error({ error: this.redactError(dlqError) }, 'email.consumer.dlq_failed');
+          }
+        }
+
         return;
       }
 
       const delayMs = Math.min(this.initialDelayMs * Math.pow(2, attempt - 1), this.maxDelayMs);
       this.logger.info(
-        { email: payload.email, attempt, nextDelayMs: delayMs },
+        { email: this.redactEmail(payload.email), attempt, nextDelayMs: delayMs },
         'email.consumer.retry'
       );
 
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-      return this.processWithRetry(payload, attempt + 1);
+      const delay = delayFn || (ms => new Promise(resolve => setTimeout(resolve, ms)));
+      await delay(delayMs);
+      return this.processWithRetry(payload, attempt + 1, delayFn);
     }
   }
 
   isRunning(): boolean {
     return this.running;
+  }
+
+  private redactEmail(email: string): string {
+    if (!email) return '[unknown]';
+    const parts = email.split('@');
+    if (parts.length !== 2) return '[invalid]';
+    const [local, domain] = parts;
+    const redactedLocal = local.length > 2 ? local.substring(0, 2) + '***' : '***';
+    return `${redactedLocal}@${domain}`;
+  }
+
+  private redactError(error: unknown): string {
+    const errorStr = String(error);
+    const sensitivePatterns = [
+      /password/i,
+      /token/i,
+      /secret/i,
+      /credential/i,
+      /api[_-]?key/i,
+      /sendgrid/i,
+    ];
+    let redacted = errorStr;
+    for (const pattern of sensitivePatterns) {
+      redacted = redacted.replace(pattern, '[REDACTED]');
+    }
+    return redacted.substring(0, 500);
   }
 }

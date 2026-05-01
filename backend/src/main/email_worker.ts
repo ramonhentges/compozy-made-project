@@ -2,7 +2,7 @@ import pino from 'pino';
 import { getEmailConfig } from '../config/email_config';
 import { SendGridAdapter } from '../modules/email/infrastructure/adapters/sendgrid_adapter';
 import { SendWelcomeEmailHandler } from '../modules/email/application/send_welcome_email/handler';
-import { UserRegisteredConsumer } from '../modules/email/infrastructure/kafka/user_registered_consumer';
+import { createUserRegisteredConsumer, getKafkaProducerConfig } from '../modules/email/infrastructure/kafka/consumer_config';
 
 const logger = pino({
   transport: process.env.NODE_ENV === 'development' ? { target: 'pino-pretty' } : undefined,
@@ -15,8 +15,7 @@ async function bootstrap() {
 
   const sendGridAdapter = new SendGridAdapter({
     apiKey: config.sendgrid.apiKey,
-    fromEmail: config.sendgrid.fromEmail,
-    fromName: config.sendgrid.fromName,
+    defaultFrom: config.sendgrid.fromEmail,
   });
 
   const sendWelcomeEmailHandler = new SendWelcomeEmailHandler({
@@ -25,19 +24,13 @@ async function bootstrap() {
     fromName: config.sendgrid.fromName,
   });
 
-  const consumer = new UserRegisteredConsumer(
-    {
-      brokers: config.kafka.brokers,
-      clientId: 'email-worker',
-      groupId: config.kafka.groupId,
-      topic: config.kafka.topic,
-      maxRetries: config.retry.maxRetries,
-      initialDelayMs: config.retry.initialDelayMs,
-      maxDelayMs: config.retry.maxDelayMs,
-    },
+  const consumer = createUserRegisteredConsumer(
+    config,
     sendWelcomeEmailHandler,
     logger
   );
+
+  const kafkaProducerConfig = getKafkaProducerConfig(config);
 
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'email.worker.shutting_down');
@@ -48,7 +41,7 @@ async function bootstrap() {
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-  await consumer.start();
+  await consumer.start(kafkaProducerConfig);
   logger.info('Email worker started successfully');
 }
 
