@@ -7,6 +7,7 @@ export interface KafkaPublisherConfig {
   brokers: string[];
   clientId: string;
   topic: string;
+  sslEnabled?: boolean;
 }
 
 export class KafkaOutboxPublisher implements OutboxPublisher {
@@ -19,6 +20,7 @@ export class KafkaOutboxPublisher implements OutboxPublisher {
     this.kafka = new Kafka({
       brokers: config.brokers,
       clientId: config.clientId,
+      ssl: config.sslEnabled ?? false,
     });
     this.producer = this.kafka.producer();
     this.topic = config.topic;
@@ -29,6 +31,7 @@ export class KafkaOutboxPublisher implements OutboxPublisher {
       brokers: kafkaConfig.brokers,
       clientId: kafkaConfig.clientId,
       topic: kafkaConfig.identityOutboxTopic,
+      sslEnabled: kafkaConfig.sslEnabled,
     });
   }
 

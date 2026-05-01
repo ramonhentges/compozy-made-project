@@ -12,6 +12,7 @@ export interface KafkaConfig {
   brokers: string[];
   clientId: string;
   identityOutboxTopic: string;
+  sslEnabled: boolean;
 }
 
 export interface OutboxRelayConfig {
@@ -20,6 +21,25 @@ export interface OutboxRelayConfig {
   maxAttempts: number;
   backoffBaseMs: number;
   backoffMaxMs: number;
+}
+
+export interface EmailConfig {
+  sendgrid: {
+    apiKey: string;
+    fromEmail: string;
+    fromName: string;
+  };
+  kafka: {
+    brokers: string[];
+    groupId: string;
+    topic: string;
+    sslEnabled: boolean;
+  };
+  retry: {
+    maxRetries: number;
+    initialDelayMs: number;
+    maxDelayMs: number;
+  };
 }
 
 export interface AppConfig {
@@ -36,6 +56,7 @@ export interface AppConfig {
   sendgrid: SendGridConfig;
   kafka: KafkaConfig;
   outboxRelay: OutboxRelayConfig;
+  email: EmailConfig;
 }
 
 import { parsePostgresUrl } from "./utils/postgres-url";
@@ -65,6 +86,10 @@ function parseKafkaBrokers(): string[] {
     .filter(Boolean);
 }
 
+export function isKafkaSslEnabled(): boolean {
+  return process.env.KAFKA_SSL === "true";
+}
+
 export const config: AppConfig = {
   port: parseInt(process.env.PORT ?? "3000", 10),
   identityDatabase: identityDbConfig,
@@ -85,6 +110,7 @@ export const config: AppConfig = {
     clientId: process.env.KAFKA_CLIENT_ID ?? "identity-service",
     identityOutboxTopic:
       process.env.IDENTITY_OUTBOX_TOPIC ?? "com.test.identity",
+    sslEnabled: isKafkaSslEnabled(),
   },
   outboxRelay: {
     pollIntervalMs: parseInt(
@@ -101,5 +127,23 @@ export const config: AppConfig = {
       process.env.OUTBOX_RELAY_BACKOFF_MAX_MS ?? "60000",
       10,
     ),
+  },
+  email: {
+    sendgrid: {
+      apiKey: getRequiredEnv("SENDGRID_API_KEY"),
+      fromEmail: process.env.EMAIL_FROM_ADDRESS ?? "noreply@acme-corp.com",
+      fromName: process.env.EMAIL_FROM_NAME ?? "Acme Corp",
+    },
+    kafka: {
+      brokers: parseKafkaBrokers(),
+      groupId: process.env.EMAIL_CONSUMER_GROUP_ID ?? "email-service",
+      topic: process.env.EMAIL_TOPIC ?? "com.test.identity.UserRegistered",
+      sslEnabled: isKafkaSslEnabled(),
+    },
+    retry: {
+      maxRetries: parseInt(process.env.EMAIL_MAX_RETRIES ?? "5", 10),
+      initialDelayMs: parseInt(process.env.EMAIL_RETRY_INITIAL_DELAY_MS ?? "1000", 10),
+      maxDelayMs: parseInt(process.env.EMAIL_RETRY_MAX_DELAY_MS ?? "60000", 10),
+    },
   },
 };
