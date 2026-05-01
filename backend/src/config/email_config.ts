@@ -1,4 +1,4 @@
-import { getRequiredEnv } from '../config/index';
+import { getRequiredEnv, getKafkaSslConfig } from '../config/index';
 import { EmailKafkaConfig, EmailConsumerRetryConfig } from '../modules/email/infrastructure/kafka/consumer_config';
 
 function parseKafkaBrokers(): string[] {
@@ -10,10 +10,6 @@ function parseKafkaBrokers(): string[] {
     .split(',')
     .map((b) => b.trim())
     .filter(Boolean);
-}
-
-function isKafkaSslEnabled(): boolean {
-  return process.env.KAFKA_SSL === 'true';
 }
 
 export function getEmailConfig() {
@@ -30,7 +26,7 @@ export function getEmailConfig() {
       dlqTopic: process.env.EMAIL_DLQ_TOPIC || 'com.test.identity.UserRegistered.DLQ',
       sessionTimeoutMs: parseInt(process.env.EMAIL_SESSION_TIMEOUT_MS || '30000', 10),
       rebalanceTimeoutMs: parseInt(process.env.EMAIL_REBALANCE_TIMEOUT_MS || '60000', 10),
-      ssl: isKafkaSslEnabled(),
+      ssl: getKafkaSslConfig(),
     } as EmailKafkaConfig,
     retry: {
       maxRetries: parseInt(process.env.EMAIL_MAX_RETRIES || '5', 10),

@@ -2,7 +2,7 @@ import { Kafka, Consumer } from "kafkajs";
 import { UserRegisteredConsumer } from "./user_registered_consumer";
 import { ISendWelcomeEmailUseCase } from "../../application/send_welcome_email/port";
 import pino, { Logger } from "pino";
-import { KafkaSslConfig, getKafkaSslConfig } from "../../../config";
+import { KafkaSslConfig, getKafkaSslConfig } from "../../../../config";
 
 export interface KafkaProducerConfig {
   brokers: string[];
