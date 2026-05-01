@@ -2,7 +2,8 @@ import { Consumer, KafkaMessage, Producer, Kafka } from 'kafkajs';
 import { ISendWelcomeEmailUseCase } from '../../application/send_welcome_email/port';
 import { SendWelcomeEmailCommand } from '../../application/send_welcome_email/command';
 import pino, { Logger } from 'pino';
-import { EmailAddress, InvalidEmailAddressError } from '../../domain/value_objects/email_address';
+import { EmailAddress } from '../../domain/value_objects/email_address';
+import { UserRegisteredEvent } from '@modules/identity/domain/events/user_registered';
 
 export interface KafkaConsumerConfig {
   kafkaConsumer: Consumer;
@@ -100,19 +101,19 @@ export class UserRegisteredConsumer {
         return;
       }
 
-      const payload = JSON.parse(message.value.toString());
+      const payload: UserRegisteredEvent = JSON.parse(message.value.toString());
 
       // Validate email using EmailAddress value object
       try {
-        EmailAddress.create(payload.email);
+        EmailAddress.create(payload.data.email);
       } catch (validationError) {
-        this.logger.warn({ messageId, email: this.redactEmail(payload.email) }, 'email.consumer.invalid_email');
+        this.logger.warn({ messageId, email: this.redactEmail(payload.data.email) }, 'email.consumer.invalid_email');
         return;
       }
 
-      this.logger.info({ messageId, email: this.redactEmail(payload.email) }, 'email.consumer.message_received');
+      this.logger.info({ messageId, email: this.redactEmail(payload.data.email) }, 'email.consumer.message_received');
 
-      await this.processWithRetry(payload);
+      await this.processWithRetry(payload.data);
     } catch (error) {
       this.logger.error({ messageId, error: this.redactError(error) }, 'email.consumer.message_error');
     }
