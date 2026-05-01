@@ -6,6 +6,7 @@ import { OutboxRecord } from '../types/outbox_record';
 describe('PgOutboxRepository', () => {
   let mockDb: {
     many: Mock;
+    manyOrNone: Mock;
     none: Mock;
     oneOrNone: Mock;
   };
@@ -31,6 +32,7 @@ describe('PgOutboxRepository', () => {
   beforeEach(() => {
     mockDb = {
       many: vi.fn(),
+      manyOrNone: vi.fn(),
       none: vi.fn(),
       oneOrNone: vi.fn(),
     };
@@ -39,12 +41,12 @@ describe('PgOutboxRepository', () => {
 
   describe('claimDue', () => {
     it('should claim due records within limit', async () => {
-      mockDb.many.mockResolvedValue([mockRecord]);
+      mockDb.manyOrNone.mockResolvedValue([mockRecord]);
 
       const now = new Date();
       const records = await repository.claimDue(10, now);
 
-      expect(mockDb.many).toHaveBeenCalledWith(
+      expect(mockDb.manyOrNone).toHaveBeenCalledWith(
         expect.stringContaining('SELECT'),
         [now, 10]
       );
@@ -53,7 +55,7 @@ describe('PgOutboxRepository', () => {
     });
 
     it('should return empty array when no records due', async () => {
-      mockDb.many.mockResolvedValue([]);
+      mockDb.manyOrNone.mockResolvedValue([]);
 
       const now = new Date();
       const records = await repository.claimDue(10, now);
@@ -62,7 +64,7 @@ describe('PgOutboxRepository', () => {
     });
 
     it('should not update status if no records returned', async () => {
-      mockDb.many.mockResolvedValue([]);
+      mockDb.manyOrNone.mockResolvedValue([]);
 
       const now = new Date();
       await repository.claimDue(10, now);

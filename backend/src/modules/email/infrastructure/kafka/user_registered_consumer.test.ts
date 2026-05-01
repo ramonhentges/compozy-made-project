@@ -93,7 +93,7 @@ describe("UserRegisteredConsumer", () => {
     it("should parse message and call handler", async () => {
       const message: Partial<KafkaMessage> = {
         offset: "123",
-        value: Buffer.from(JSON.stringify({ email: "test@example.com" })),
+        value: Buffer.from(JSON.stringify({ data: { email: "test@example.com" } })),
         key: Buffer.from("key"),
         headers: {},
         timestamp: "123456789",

@@ -222,11 +222,8 @@ describe('Migration Execution - Identity Context', () => {
       const script = packageJson.scripts['migrate:identity_context'];
 
       expect(script).toContain('node-pg-migrate');
-      expect(script).toContain('PGHOST');
-      expect(script).toContain('PGPORT');
-      expect(script).toContain('PGDATABASE');
-      expect(script).toContain('PGUSER');
-      expect(script).toContain('PGPASSWORD');
+      expect(script).toContain('DATABASE_URL');
+      expect(script).toContain('IDENTITY_DATABASE_URL');
       expect(script).toContain('identity_context');
     });
   });
