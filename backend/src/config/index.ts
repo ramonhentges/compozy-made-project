@@ -8,11 +8,18 @@ export interface SendGridConfig {
   defaultFrom: string;
 }
 
+export interface KafkaSslConfig {
+  ca?: string;
+  cert?: string;
+  key?: string;
+  rejectUnauthorized?: boolean;
+}
+
 export interface KafkaConfig {
   brokers: string[];
   clientId: string;
   identityOutboxTopic: string;
-  sslEnabled: boolean;
+  ssl: boolean | KafkaSslConfig;
 }
 
 export interface OutboxRelayConfig {
@@ -33,7 +40,7 @@ export interface EmailConfig {
     brokers: string[];
     groupId: string;
     topic: string;
-    sslEnabled: boolean;
+    ssl: boolean | KafkaSslConfig;
   };
   retry: {
     maxRetries: number;
@@ -53,7 +60,10 @@ export interface AppConfig {
   bcrypt: {
     rounds: number;
   };
-  sendgrid: SendGridConfig;
+  sendgrid: {
+    apiKey: string;
+    defaultFrom: string;
+  };
   kafka: KafkaConfig;
   outboxRelay: OutboxRelayConfig;
   email: EmailConfig;
@@ -86,8 +96,18 @@ function parseKafkaBrokers(): string[] {
     .filter(Boolean);
 }
 
-export function isKafkaSslEnabled(): boolean {
-  return process.env.KAFKA_SSL === "true";
+export function getKafkaSslConfig(): boolean | KafkaSslConfig {
+  if (process.env.KAFKA_SSL === "true") {
+    const sslConfig: KafkaSslConfig = {};
+    if (process.env.KAFKA_SSL_CA) sslConfig.ca = process.env.KAFKA_SSL_CA;
+    if (process.env.KAFKA_SSL_CERT) sslConfig.cert = process.env.KAFKA_SSL_CERT;
+    if (process.env.KAFKA_SSL_KEY) sslConfig.key = process.env.KAFKA_SSL_KEY;
+    if (process.env.KAFKA_SSL_REJECT_UNAUTHORIZED !== undefined) {
+      sslConfig.rejectUnauthorized = process.env.KAFKA_SSL_REJECT_UNAUTHORIZED !== "false";
+    }
+    return Object.keys(sslConfig).length > 0 ? sslConfig : true;
+  }
+  return false;
 }
 
 export const config: AppConfig = {
@@ -110,7 +130,7 @@ export const config: AppConfig = {
     clientId: process.env.KAFKA_CLIENT_ID ?? "identity-service",
     identityOutboxTopic:
       process.env.IDENTITY_OUTBOX_TOPIC ?? "com.test.identity",
-    sslEnabled: isKafkaSslEnabled(),
+    ssl: getKafkaSslConfig(),
   },
   outboxRelay: {
     pollIntervalMs: parseInt(
@@ -138,7 +158,7 @@ export const config: AppConfig = {
       brokers: parseKafkaBrokers(),
       groupId: process.env.EMAIL_CONSUMER_GROUP_ID ?? "email-service",
       topic: process.env.EMAIL_TOPIC ?? "com.test.identity.UserRegistered",
-      sslEnabled: isKafkaSslEnabled(),
+      ssl: getKafkaSslConfig(),
     },
     retry: {
       maxRetries: parseInt(process.env.EMAIL_MAX_RETRIES ?? "5", 10),

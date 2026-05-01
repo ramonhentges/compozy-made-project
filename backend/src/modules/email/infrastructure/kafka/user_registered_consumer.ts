@@ -16,7 +16,7 @@ export interface KafkaConsumerConfig {
 export interface KafkaProducerConfig {
   brokers: string[];
   clientId: string;
-  ssl?: boolean | import("../../../config").KafkaSslConfig;
+  ssl?: boolean;
 }
 
 export class UserRegisteredConsumer {

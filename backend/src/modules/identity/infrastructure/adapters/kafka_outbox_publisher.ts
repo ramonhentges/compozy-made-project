@@ -31,7 +31,7 @@ export class KafkaOutboxPublisher implements OutboxPublisher {
       brokers: kafkaConfig.brokers,
       clientId: kafkaConfig.clientId,
       topic: kafkaConfig.identityOutboxTopic,
-      sslEnabled: kafkaConfig.sslEnabled,
+      sslEnabled: !!kafkaConfig.ssl,
     });
   }
 

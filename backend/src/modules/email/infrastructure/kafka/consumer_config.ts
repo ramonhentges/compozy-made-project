@@ -6,7 +6,7 @@ import pino, { Logger } from "pino";
 export interface KafkaProducerConfig {
   brokers: string[];
   clientId: string;
-  ssl?: boolean | import("../../../config").KafkaSslConfig;
+  ssl?: boolean;
 }
 
 export interface EmailKafkaConfig {
@@ -16,7 +16,7 @@ export interface EmailKafkaConfig {
   dlqTopic?: string;
   sessionTimeoutMs: number;
   rebalanceTimeoutMs: number;
-  ssl?: boolean | import("../../../config").KafkaSslConfig;
+  ssl?: boolean;
 }
 
 export interface EmailConsumerRetryConfig {
@@ -51,7 +51,7 @@ export function getEmailConfig(): EmailConfig {
       dlqTopic: process.env.EMAIL_DLQ_TOPIC ?? "com.test.identity.UserRegistered.DLQ",
       sessionTimeoutMs: parseInt(process.env.EMAIL_SESSION_TIMEOUT_MS ?? "30000", 10),
       rebalanceTimeoutMs: parseInt(process.env.EMAIL_REBALANCE_TIMEOUT_MS ?? "60000", 10),
-      ssl: getKafkaSslConfig(),
+      ssl: isKafkaSslEnabled(),
     },
     retry: {
       maxRetries: parseInt(process.env.EMAIL_MAX_RETRIES ?? "5", 10),

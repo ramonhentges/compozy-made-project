@@ -36,7 +36,7 @@ describe("KafkaOutboxPublisher", () => {
         brokers: ["broker1:9092", "broker2:9092"],
         clientId: "identity-service",
         identityOutboxTopic: "identity-outbox",
-        sslEnabled: false,
+        ssl: false,
       };
 
       const configPublisher = KafkaOutboxPublisher.fromAppConfig(kafkaConfig);
