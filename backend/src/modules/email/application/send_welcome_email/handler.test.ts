@@ -9,7 +9,7 @@ describe('SendWelcomeEmailHandler', () => {
   const fromEmail = 'noreply@acmecorp.com';
   const fromName = 'Acme Corp';
 
-  let mockEmailService: IEmailService;
+  let mockEmailService: { sendEmail: any };
   let handler: SendWelcomeEmailHandler;
 
   beforeEach(() => {
@@ -18,7 +18,7 @@ describe('SendWelcomeEmailHandler', () => {
     };
 
     handler = new SendWelcomeEmailHandler({
-      emailService: mockEmailService,
+      emailService: mockEmailService as IEmailService,
       fromEmail,
       fromName,
     });
@@ -47,7 +47,7 @@ describe('SendWelcomeEmailHandler', () => {
         name: validName,
       });
 
-      const calledWith = mockEmailService.sendEmail.mock.calls[0][0] as EmailMessage;
+      const calledWith = (mockEmailService.sendEmail as any).mock.calls[0][0] as EmailMessage;
       expect(calledWith.html).toContain('Welcome, John!');
       expect(calledWith.text).toContain('Welcome, John!');
     });
@@ -57,12 +57,12 @@ describe('SendWelcomeEmailHandler', () => {
         email: validEmail,
       });
 
-      const calledWith = mockEmailService.sendEmail.mock.calls[0][0] as EmailMessage;
+      const calledWith = (mockEmailService.sendEmail as any).mock.calls[0][0] as EmailMessage;
       expect(calledWith.html).toContain('Welcome, there!');
     });
 
     it('should propagate errors from email service', async () => {
-      mockEmailService.sendEmail = vi.fn().mockRejectedValue(new Error('SendGrid error'));
+      mockEmailService.sendEmail.mockRejectedValue(new Error('SendGrid error'));
 
       await expect(
         handler.execute({

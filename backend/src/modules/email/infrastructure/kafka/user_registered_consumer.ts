@@ -58,7 +58,7 @@ export class UserRegisteredConsumer {
       const kafka = new Kafka({
         brokers: kafkaConfig.brokers,
         clientId: kafkaConfig.clientId,
-        ssl: kafkaConfig.sslEnabled,
+        ssl: kafkaConfig.sslEnabled ?? process.env.KAFKA_SSL === 'true',
       });
       this.dlqProducer = kafka.producer();
       await this.dlqProducer.connect();

@@ -22,7 +22,7 @@ describe("UserRegisteredConsumer", () => {
       subscribe: vi.fn().mockResolvedValue(undefined),
       run: vi.fn().mockImplementation(async (opts: any) => {
         // Store the eachMessage handler for direct testing
-        (mockConsumer as any)._eachMessageHandler = opts.eachMessage;
+        mockConsumer._eachMessageHandler = opts.eachMessage;
       }),
     };
 
@@ -83,7 +83,7 @@ describe("UserRegisteredConsumer", () => {
   });
 
   describe("handleMessage via eachMessage", () => {
-    async function triggerEachMessage(message: KafkaMessage) {
+    async function triggerEachMessage(message: Partial<KafkaMessage>) {
       await consumer.start();
       const handler = (mockConsumer as any)._eachMessageHandler;
       expect(handler).toBeDefined();
@@ -91,14 +91,13 @@ describe("UserRegisteredConsumer", () => {
     }
 
     it("should parse message and call handler", async () => {
-      const message: KafkaMessage = {
+      const message: Partial<KafkaMessage> = {
         offset: "123",
         value: Buffer.from(JSON.stringify({ email: "test@example.com" })),
         key: Buffer.from("key"),
         headers: {},
         timestamp: "123456789",
         attributes: 0,
-        size: 100,
       };
 
       await triggerEachMessage(message);
@@ -111,14 +110,13 @@ describe("UserRegisteredConsumer", () => {
     });
 
     it("should handle invalid message payload", async () => {
-      const message: KafkaMessage = {
+      const message: Partial<KafkaMessage> = {
         offset: "123",
         value: Buffer.from("invalid json"),
         key: Buffer.from("key"),
         headers: {},
         timestamp: "123456789",
         attributes: 0,
-        size: 100,
       };
 
       await triggerEachMessage(message);
@@ -127,14 +125,13 @@ describe("UserRegisteredConsumer", () => {
     });
 
     it("should handle empty message", async () => {
-      const message: KafkaMessage = {
+      const message: Partial<KafkaMessage> = {
         offset: "123",
         value: null,
         key: Buffer.from("key"),
         headers: {},
         timestamp: "123456789",
         attributes: 0,
-        size: 100,
       };
 
       await triggerEachMessage(message);
@@ -167,7 +164,6 @@ describe("UserRegisteredConsumer", () => {
 
       const payload = { email: "test@example.com" };
 
-      // Use a no-op delay function to avoid real timeouts
       const noopDelay = vi.fn().mockResolvedValue(undefined);
 
       await (consumer as any).processWithRetry(payload, 1, noopDelay);
@@ -180,7 +176,6 @@ describe("UserRegisteredConsumer", () => {
 
       const payload = { email: "test@example.com" };
 
-      // Use a no-op delay function to avoid real timeouts
       const noopDelay = vi.fn().mockResolvedValue(undefined);
 
       await (consumer as any).processWithRetry(payload, config.maxRetries, noopDelay);
@@ -215,7 +210,6 @@ describe("UserRegisteredConsumer", () => {
         logger
       );
 
-      // Inject the DLQ producer directly
       (consumerWithDlq as any).dlqProducer = mockDlqProducer;
 
       const payload = { email: "dlq-test@example.com" };

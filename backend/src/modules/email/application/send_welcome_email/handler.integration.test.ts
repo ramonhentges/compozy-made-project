@@ -16,8 +16,7 @@ describeWithSendGrid('SendWelcomeEmailHandler integration with SendGrid sandbox'
   beforeAll(() => {
     sendGridAdapter = new SendGridAdapter({
       apiKey: sendGridApiKey!,
-      fromEmail,
-      fromName,
+      defaultFrom: fromEmail,
       sandboxMode: true,
     });
 

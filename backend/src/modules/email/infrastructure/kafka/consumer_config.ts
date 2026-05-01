@@ -6,6 +6,7 @@ import pino, { Logger } from "pino";
 export interface KafkaProducerConfig {
   brokers: string[];
   clientId: string;
+  sslEnabled?: boolean;
 }
 
 export interface EmailKafkaConfig {
@@ -95,6 +96,7 @@ export function getKafkaProducerConfig(config: EmailConfig): KafkaProducerConfig
   return {
     brokers: config.kafka.brokers,
     clientId: `${config.kafka.groupId}-dlq-producer`,
+    sslEnabled: config.kafka.sslEnabled,
   };
 }
 
