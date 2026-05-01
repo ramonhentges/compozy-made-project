@@ -1,5 +1,5 @@
 import { IDatabase } from 'pg-promise';
-import { OutboxRecord, OutboxStatus } from '../types/outbox_record';
+import { OutboxRecord } from '../types/outbox_record';
 import { OutboxRecordMapper, OutboxRecordDTO } from '../mappers/outbox_record_mapper';
 
 const OUTBOX_SELECT_COLUMNS = `
@@ -29,7 +29,7 @@ export class PgOutboxRepository implements OutboxRepository {
   }
 
   async claimDue(limit: number, now: Date): Promise<OutboxRecord[]> {
-    const rows = await this.db.many<OutboxRecordDTO>(
+    const rows = await this.db.manyOrNone<OutboxRecordDTO>(
       `SELECT ${OUTBOX_SELECT_COLUMNS}
        FROM events
        WHERE status = 'pending'
