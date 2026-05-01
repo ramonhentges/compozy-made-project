@@ -8,7 +8,7 @@
     "build": "tsc",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "migrate:identity_context": "PGHOST=${IDENTITY_DB_HOST:-localhost} PGPORT=${IDENTITY_DB_PORT:-5432} PGDATABASE=${IDENTITY_DB_NAME:-identity_db} PGUSER=${IDENTITY_DB_USER:-postgres} PGPASSWORD=${IDENTITY_DB_PASSWORD:-postgres} node-pg-migrate -m src/migrations/identity_context --use-glob --ignore-pattern '*_down.sql'",
+    "migrate:identity_context": "DATABASE_URL=${IDENTITY_DATABASE_URL} node-pg-migrate -m src/migrations/identity_context --ignore-pattern '.*.(ts|md)'",
     "migrate:identity_context:up": "npm run migrate:identity_context -- up",
     "migrate:identity_context:down": "npm run migrate:identity_context -- down"
   },
