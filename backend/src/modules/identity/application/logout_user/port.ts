@@ -1,3 +1,5 @@
+import { LogoutUserCommand } from './command';
+
 export interface ILogoutUserUseCase {
-  execute(userId: string): Promise<void>;
+  execute(command: LogoutUserCommand): Promise<void>;
 }

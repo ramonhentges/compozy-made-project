@@ -3,11 +3,12 @@ import { JwtAdapter } from './jwt_adapter';
 import { UserId } from '../../domain/value_objects/user_id';
 
 describe('JwtAdapter', () => {
-  const secret = 'test-secret-key-for-testing';
+  const accessSecret = 'test-access-secret-key-for-testing-32';
+  const refreshSecret = 'test-refresh-secret-key-for-testing-32';
   let jwtAdapter: JwtAdapter;
 
   beforeEach(() => {
-    jwtAdapter = new JwtAdapter({ secret });
+    jwtAdapter = new JwtAdapter({ accessSecret, refreshSecret });
   });
 
   const createPayload = () => ({
@@ -62,7 +63,15 @@ describe('JwtAdapter', () => {
       const refreshPayload = createRefreshPayload();
       const token = jwtAdapter.generateRefreshToken(refreshPayload);
 
-      expect(() => jwtAdapter.verifyAccessToken(token)).toThrow('Invalid token type: expected access token');
+      expect(() => jwtAdapter.verifyAccessToken(token)).toThrow();
+    });
+
+    it('should throw when verified with refresh secret', () => {
+      const accessPayload = createPayload();
+      const token = jwtAdapter.generateAccessToken(accessPayload);
+      const wrongAdapter = new JwtAdapter({ accessSecret: refreshSecret, refreshSecret });
+
+      expect(() => wrongAdapter.verifyAccessToken(token)).toThrow('invalid signature');
     });
   });
 
@@ -82,13 +91,21 @@ describe('JwtAdapter', () => {
       const accessPayload = createPayload();
       const token = jwtAdapter.generateAccessToken(accessPayload);
 
-      expect(() => jwtAdapter.verifyRefreshToken(token)).toThrow('Invalid token type: expected refresh token');
+      expect(() => jwtAdapter.verifyRefreshToken(token)).toThrow();
+    });
+
+    it('should throw when verified with access secret', () => {
+      const refreshPayload = createRefreshPayload();
+      const token = jwtAdapter.generateRefreshToken(refreshPayload);
+      const wrongAdapter = new JwtAdapter({ accessSecret, refreshSecret: accessSecret });
+
+      expect(() => wrongAdapter.verifyRefreshToken(token)).toThrow('invalid signature');
     });
   });
 
   describe('token expiration', () => {
     it('should detect expired tokens via verify', () => {
-      const shortLivedAdapter = new JwtAdapter({ secret });
+      const shortLivedAdapter = new JwtAdapter({ accessSecret, refreshSecret });
       const payload = createPayload();
 
       const token = shortLivedAdapter.generateAccessToken(payload);

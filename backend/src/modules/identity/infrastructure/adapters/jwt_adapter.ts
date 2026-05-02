@@ -6,7 +6,8 @@ const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY = '7d';
 
 export interface JwtAdapterConfig {
-  secret: string;
+  accessSecret: string;
+  refreshSecret: string;
 }
 
 export class InvalidTokenPayloadError extends Error {
@@ -24,10 +25,12 @@ export class InvalidTokenTypeError extends Error {
 }
 
 export class JwtAdapter implements ITokenService {
-  private readonly secret: string;
+  private readonly accessSecret: string;
+  private readonly refreshSecret: string;
 
   constructor(config: JwtAdapterConfig) {
-    this.secret = config.secret;
+    this.accessSecret = config.accessSecret;
+    this.refreshSecret = config.refreshSecret;
   }
 
   generateAccessToken(payload: TokenPayload): string {
@@ -37,7 +40,7 @@ export class JwtAdapter implements ITokenService {
         email: payload.email,
         type: payload.type,
       },
-      this.secret,
+      this.accessSecret,
       { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: 'HS256' }
     );
   }
@@ -49,13 +52,13 @@ export class JwtAdapter implements ITokenService {
         email: payload.email,
         type: payload.type,
       },
-      this.secret,
+      this.refreshSecret,
       { expiresIn: REFRESH_TOKEN_EXPIRY, algorithm: 'HS256' }
     );
   }
 
   verifyAccessToken(token: string): TokenPayload {
-    const decoded = jwt.verify(token, this.secret, { algorithms: ['HS256'] }) as jwt.JwtPayload;
+    const decoded = jwt.verify(token, this.accessSecret, { algorithms: ['HS256'] }) as jwt.JwtPayload;
     if (!decoded.userId || !decoded.email || !decoded.type) {
       throw new InvalidTokenPayloadError();
     }
@@ -70,7 +73,7 @@ export class JwtAdapter implements ITokenService {
   }
 
   verifyRefreshToken(token: string): TokenPayload {
-    const decoded = jwt.verify(token, this.secret, { algorithms: ['HS256'] }) as jwt.JwtPayload;
+    const decoded = jwt.verify(token, this.refreshSecret, { algorithms: ['HS256'] }) as jwt.JwtPayload;
     if (!decoded.userId || !decoded.email || !decoded.type) {
       throw new InvalidTokenPayloadError();
     }
@@ -82,5 +85,9 @@ export class JwtAdapter implements ITokenService {
       email: decoded.email,
       type: 'refresh',
     };
+  }
+
+  getRefreshTokenExpiry(): Date {
+    return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   }
 }

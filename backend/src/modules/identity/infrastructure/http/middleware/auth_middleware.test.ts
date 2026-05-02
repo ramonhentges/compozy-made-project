@@ -17,6 +17,7 @@ describe('AuthMiddleware', () => {
       generateRefreshToken: vi.fn(),
       verifyAccessToken: vi.fn(),
       verifyRefreshToken: vi.fn(),
+      getRefreshTokenExpiry: vi.fn(),
     };
     middleware = createAuthMiddleware(mockTokenService);
   });

@@ -2,11 +2,9 @@ import { DomainEvent } from '../../../../../shared/types/domain_event';
 import { generateUuid } from '../../../../../shared/utils/uuid_generator';
 import { OutboxInsertData } from '../types/outbox_record';
 
-const IDENTITY_USER_AGGREGATE_TYPE = 'User';
+type SupportedIdentityEventName = 'UserRegistered' | 'PasswordChanged' | 'RefreshTokenCreated' | 'RefreshTokenRevoked';
 
-type SupportedIdentityEventName = 'UserRegistered' | 'PasswordChanged';
-
-type OutboxPayload = { email: string } | null;
+type OutboxPayload = { email: string } | { userId: string } | null;
 
 export class UnsupportedOutboxEventError extends Error {
   constructor(eventName: string) {
@@ -21,7 +19,7 @@ export class OutboxEventMapper {
       id: generateUuid(),
       eventName: event.eventName,
       eventVersion: event.version,
-      aggregateType: IDENTITY_USER_AGGREGATE_TYPE,
+      aggregateType: this.toAggregateType(event.eventName as SupportedIdentityEventName),
       aggregateId: event.aggregateId,
       payload: this.toPayload(event),
       status: 'pending',
@@ -35,11 +33,28 @@ export class OutboxEventMapper {
     };
   }
 
+  private static toAggregateType(eventName: SupportedIdentityEventName): string {
+    switch (eventName) {
+      case 'UserRegistered':
+      case 'PasswordChanged':
+        return 'User';
+      case 'RefreshTokenCreated':
+      case 'RefreshTokenRevoked':
+        return 'RefreshToken';
+      default:
+        throw new UnsupportedOutboxEventError(eventName);
+    }
+  }
+
   private static toPayload(event: DomainEvent): OutboxPayload {
     switch (event.eventName as SupportedIdentityEventName) {
       case 'UserRegistered':
         return this.toUserRegisteredPayload(event);
       case 'PasswordChanged':
+        return null;
+      case 'RefreshTokenCreated':
+        return this.toRefreshTokenCreatedPayload(event);
+      case 'RefreshTokenRevoked':
         return null;
       default:
         throw new UnsupportedOutboxEventError(event.eventName);
@@ -54,11 +69,25 @@ export class OutboxEventMapper {
     return { email: event.data.email };
   }
 
+  private static toRefreshTokenCreatedPayload(event: DomainEvent): { userId: string } {
+    if (!this.hasUserIdData(event.data)) {
+      throw new Error('RefreshTokenCreated outbox event requires userId data');
+    }
+
+    return { userId: event.data.userId };
+  }
+
   private static hasEmailData(data: unknown): data is { email: string } {
     return typeof data === 'object'
       && data !== null
       && 'email' in data
       && typeof data.email === 'string';
   }
-}
 
+  private static hasUserIdData(data: unknown): data is { userId: string } {
+    return typeof data === 'object'
+      && data !== null
+      && 'userId' in data
+      && typeof data.userId === 'string';
+  }
+}

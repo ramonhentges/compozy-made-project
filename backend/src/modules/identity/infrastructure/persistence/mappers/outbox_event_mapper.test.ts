@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { UserRegisteredEvent } from '../../../domain/events/user_registered';
 import { PasswordChangedEvent } from '../../../domain/events/password_changed';
+import { RefreshTokenCreatedEvent } from '../../../domain/events/refresh_token_created';
+import { RefreshTokenRevokedEvent } from '../../../domain/events/refresh_token_revoked';
 import { Email } from '../../../domain/value_objects/email';
 import { UserId } from '../../../domain/value_objects/user_id';
+import { RefreshTokenId } from '../../../domain/value_objects/refresh_token_id';
 import { DomainEvent } from '../../../../../shared/types/domain_event';
 import {
   INSERT_OUTBOX_EVENT_SQL,
@@ -88,6 +91,32 @@ describe('OutboxEventMapper', () => {
     expect(JSON.stringify(record.payload)).not.toContain('passwordHash');
     expect(JSON.stringify(record.payload)).not.toContain('token');
     expect(JSON.stringify(record.payload)).not.toContain('requestMetadata');
+  });
+
+  it('maps RefreshTokenCreated to outbox insert record with RefreshToken aggregate type', () => {
+    const refreshTokenId = RefreshTokenId.create('a1b2c3d4-e5f6-4789-abcd-ef0123456789');
+    const event = new RefreshTokenCreatedEvent(refreshTokenId, userId);
+
+    const record = OutboxEventMapper.toInsertData(event, scheduledAt);
+
+    expect(record.eventName).toBe('RefreshTokenCreated');
+    expect(record.eventVersion).toBe(1);
+    expect(record.aggregateType).toBe('RefreshToken');
+    expect(record.aggregateId).toBe(refreshTokenId.value);
+    expect(record.payload).toEqual({ userId: userId.value });
+  });
+
+  it('maps RefreshTokenRevoked to outbox insert record with RefreshToken aggregate type', () => {
+    const refreshTokenId = RefreshTokenId.create('a1b2c3d4-e5f6-4789-abcd-ef0123456789');
+    const event = new RefreshTokenRevokedEvent(refreshTokenId);
+
+    const record = OutboxEventMapper.toInsertData(event, scheduledAt);
+
+    expect(record.eventName).toBe('RefreshTokenRevoked');
+    expect(record.eventVersion).toBe(1);
+    expect(record.aggregateType).toBe('RefreshToken');
+    expect(record.aggregateId).toBe(refreshTokenId.value);
+    expect(record.payload).toBeNull();
   });
 });
 
