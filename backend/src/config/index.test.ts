@@ -61,7 +61,8 @@ describe('config', () => {
 
     it('should have default Kafka brokers', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
       const { getConfig } = await import('./index');
@@ -72,7 +73,8 @@ describe('config', () => {
 
     it('should parse KAFKA_BROKERS as comma-separated list', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.KAFKA_BROKERS = 'broker1:9092, broker2:9092 , broker3:9092';
 
@@ -84,7 +86,8 @@ describe('config', () => {
 
     it('should use default Kafka client ID', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
       const { getConfig } = await import('./index');
@@ -95,7 +98,8 @@ describe('config', () => {
 
     it('should use KAFKA_CLIENT_ID env variable', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.KAFKA_CLIENT_ID = 'custom-client-id';
 
@@ -107,7 +111,8 @@ describe('config', () => {
 
     it('should use default identity outbox topic', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
       const { getConfig } = await import('./index');
@@ -118,7 +123,8 @@ describe('config', () => {
 
     it('should use IDENTITY_OUTBOX_TOPIC env variable', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.IDENTITY_OUTBOX_TOPIC = 'custom-topic';
 
@@ -144,7 +150,8 @@ describe('config', () => {
 
     it('should have default relay poll interval', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
       const { getConfig } = await import('./index');
@@ -155,7 +162,8 @@ describe('config', () => {
 
     it('should use OUTBOX_RELAY_POLL_INTERVAL_MS env variable', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.OUTBOX_RELAY_POLL_INTERVAL_MS = '2000';
 
@@ -167,7 +175,8 @@ describe('config', () => {
 
     it('should have default relay batch size', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
       const { getConfig } = await import('./index');
@@ -178,7 +187,8 @@ describe('config', () => {
 
     it('should use OUTBOX_RELAY_BATCH_SIZE env variable', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.OUTBOX_RELAY_BATCH_SIZE = '50';
 
@@ -190,7 +200,8 @@ describe('config', () => {
 
     it('should have default relay max attempts', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
       const { getConfig } = await import('./index');
@@ -201,7 +212,8 @@ describe('config', () => {
 
     it('should use OUTBOX_RELAY_MAX_ATTEMPTS env variable', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.OUTBOX_RELAY_MAX_ATTEMPTS = '10';
 
@@ -213,7 +225,8 @@ describe('config', () => {
 
     it('should have default relay backoff base', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
       const { getConfig } = await import('./index');
@@ -224,7 +237,8 @@ describe('config', () => {
 
     it('should use OUTBOX_RELAY_BACKOFF_BASE_MS env variable', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.OUTBOX_RELAY_BACKOFF_BASE_MS = '500';
 
@@ -236,7 +250,8 @@ describe('config', () => {
 
     it('should have default relay backoff max', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
 
       const { getConfig } = await import('./index');
@@ -247,7 +262,8 @@ describe('config', () => {
 
     it('should use OUTBOX_RELAY_BACKOFF_MAX_MS env variable', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       process.env.OUTBOX_RELAY_BACKOFF_MAX_MS = '300000';
 
@@ -261,7 +277,8 @@ describe('config', () => {
   describe('config structure', () => {
     it('should have all required fields when env vars set', async () => {
       vi.resetModules();
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.IDENTITY_DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       
       const { getConfig } = await import('./index');
@@ -269,14 +286,16 @@ describe('config', () => {
       
       expect(freshConfig.port).toBe(3000);
       expect(freshConfig.identityDatabase.host).toBe('localhost');
-      expect(freshConfig.jwt.secret).toBe('test-secret');
+      expect(freshConfig.jwt.accessSecret).toBe('test-access-secret-32-chars-long');
+      expect(freshConfig.jwt.refreshSecret).toBe('test-refresh-secret-32-chars-long');
       expect(freshConfig.bcrypt.rounds).toBe(12);
     });
 
     it('should use PORT env variable', async () => {
       vi.resetModules();
       process.env.PORT = '4000';
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       
       const { getConfig } = await import('./index');
@@ -288,7 +307,8 @@ describe('config', () => {
     it('should use BCRYPT_ROUNDS env variable', async () => {
       vi.resetModules();
       process.env.BCRYPT_ROUNDS = '10';
-      process.env.JWT_SECRET = 'test-secret';
+      process.env.JWT_ACCESS_SECRET = 'test-access-secret-32-chars-long';
+      process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-32-chars-long';
       process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/mydb';
       
       const { getConfig } = await import('./index');

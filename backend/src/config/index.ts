@@ -53,12 +53,18 @@ export interface AppConfig {
   port: number;
   identityDatabase: IdentityDatabaseConfig;
   jwt: {
-    secret: string;
+    accessSecret: string;
+    refreshSecret: string;
     accessExpiry: string;
     refreshExpiry: string;
   };
   bcrypt: {
     rounds: number;
+  };
+  auth: {
+    cookieSecure: boolean;
+    cookieSameSite: "strict" | "lax" | "none";
+    maxSessionsPerUser: number;
   };
   sendgrid: {
     apiKey: string;
@@ -115,12 +121,18 @@ export function getConfig(): AppConfig {
     port: parseInt(process.env.PORT ?? "3000", 10),
     identityDatabase: getIdentityDatabaseConfig(),
     jwt: {
-      secret: getRequiredEnv("JWT_SECRET", "dev-secret-do-not-use-in-production"),
+      accessSecret: getRequiredEnv("JWT_ACCESS_SECRET", "dev-access-secret-do-not-use-in-production"),
+      refreshSecret: getRequiredEnv("JWT_REFRESH_SECRET", "dev-refresh-secret-do-not-use-in-production"),
       accessExpiry: process.env.JWT_ACCESS_EXPIRY ?? "15m",
       refreshExpiry: process.env.JWT_REFRESH_EXPIRY ?? "7d",
     },
     bcrypt: {
       rounds: parseInt(process.env.BCRYPT_ROUNDS ?? "12", 10),
+    },
+    auth: {
+      cookieSecure: process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production",
+      cookieSameSite: (process.env.COOKIE_SAME_SITE as "strict" | "lax" | "none") ?? "lax",
+      maxSessionsPerUser: parseInt(process.env.MAX_SESSIONS_PER_USER ?? "5", 10),
     },
     sendgrid: {
       apiKey: getRequiredEnv("SENDGRID_API_KEY"),
