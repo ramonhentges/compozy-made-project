@@ -83,6 +83,9 @@ services:
       KAFKA_BROKERS: kafka:9092
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      MAX_SESSIONS_PER_USER: ${MAX_SESSIONS_PER_USER}
     depends_on:
       postgres:
         condition: service_healthy
