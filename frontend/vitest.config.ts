@@ -9,7 +9,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      include: ["src/stores/**", "src/api/**"],
+      include: ["src/stores/**", "src/api/**", "src/router.tsx", "src/routes/**"],
     },
     watch: false,
   },

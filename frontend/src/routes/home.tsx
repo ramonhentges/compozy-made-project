@@ -1,4 +1,4 @@
-import { redirect, useLoaderData, useNavigate } from '@tanstack/react-router';
+import { useLoaderData, useNavigate } from '@tanstack/react-router';
 import { useCallback } from 'react';
 import type { User } from '@/stores/auth.store';
 import { useAuthStore } from '@/stores/auth.store';
@@ -10,21 +10,7 @@ interface HomeLoaderData {
 }
 
 export async function homeLoader() {
-  try {
-    const response = await fetch('/api/token/refresh', {
-      method: 'POST',
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      throw redirect({ to: '/login' });
-    }
-
-    const data = await response.json() as { user: User };
-    return { user: data.user };
-  } catch {
-    throw redirect({ to: '/login' });
-  }
+  return { user: useAuthStore.getState().user };
 }
 
 export function HomePage() {

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { registerFn, loginFn, logoutFn, refreshFn, AuthError } from '../api/auth.functions';
+import { registerFn, loginFn, logoutFn, refreshFn, listSessionsFn, revokeSessionFn, AuthError } from '../api/auth.functions';
+import { useAuthStore } from '../stores/auth.store';
 
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -7,6 +8,7 @@ global.fetch = mockFetch;
 describe('auth.functions', () => {
   beforeEach(() => {
     mockFetch.mockClear();
+    useAuthStore.getState().clearAuth();
   });
 
   afterEach(() => {
@@ -16,11 +18,11 @@ describe('auth.functions', () => {
   describe('registerFn', () => {
     const validPassword = 'Password123!';
 
-    it('calls POST /register with validated data', async () => {
-      const mockUser = { id: '1', email: 'test@example.com', name: 'Test User' };
+    it('calls POST /register with validated data and maps response', async () => {
+      const mockResponse = { userId: '1', email: 'test@example.com', name: 'Test User' };
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ user: mockUser }),
+        json: () => Promise.resolve(mockResponse),
       } as Response);
 
       const result = await registerFn({
@@ -38,7 +40,7 @@ describe('auth.functions', () => {
           body: JSON.stringify({ email: 'test@example.com', name: 'Test User', password: validPassword }),
         })
       );
-      expect(result).toEqual({ user: mockUser });
+      expect(result).toEqual({ user: { id: '1', email: 'test@example.com', name: 'Test User' } });
     });
 
     it('throws AuthError on API error', async () => {
@@ -146,7 +148,8 @@ describe('auth.functions', () => {
   });
 
   describe('logoutFn', () => {
-    it('calls POST /logout', async () => {
+    it('calls POST /logout with Authorization header when token exists', async () => {
+      useAuthStore.getState().setAuth('access-token', { id: '1', email: 'test@example.com', name: 'Test User' });
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({}),
@@ -158,6 +161,28 @@ describe('auth.functions', () => {
         '/api/logout',
         expect.objectContaining({
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer access-token',
+          },
+          credentials: 'include',
+        })
+      );
+    });
+
+    it('calls POST /logout without Authorization header when no token exists', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({}),
+      } as Response);
+
+      await logoutFn();
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/logout',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
         })
       );
@@ -207,6 +232,72 @@ describe('auth.functions', () => {
       } as Response);
 
       await expect(refreshFn()).rejects.toThrow(AuthError);
+    });
+  });
+
+  describe('listSessionsFn', () => {
+    it('calls GET /sessions', async () => {
+      const mockResponse = {
+        sessions: [
+          { id: 'sess-1', deviceInfo: 'Chrome / macOS', createdAt: '2024-01-01T00:00:00Z', lastUsedAt: '2024-01-02T00:00:00Z', expiresAt: '2024-02-01T00:00:00Z', isCurrent: true },
+        ],
+      };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      } as Response);
+
+      const result = await listSessionsFn();
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/sessions',
+        expect.objectContaining({
+          method: 'GET',
+          credentials: 'include',
+        })
+      );
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('throws AuthError on list sessions failure', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        json: () => Promise.resolve({ message: 'Not authenticated' }),
+      } as Response);
+
+      await expect(listSessionsFn()).rejects.toThrow(AuthError);
+    });
+  });
+
+  describe('revokeSessionFn', () => {
+    it('calls POST /sessions/:id/revoke', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({}),
+      } as Response);
+
+      await revokeSessionFn('sess-1');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/sessions/sess-1/revoke',
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+        })
+      );
+    });
+
+    it('throws AuthError on revoke failure', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        json: () => Promise.resolve({ message: 'Session not found' }),
+      } as Response);
+
+      await expect(revokeSessionFn('sess-unknown')).rejects.toThrow(AuthError);
     });
   });
 
