@@ -11,4 +11,5 @@ export interface ITokenService {
   generateRefreshToken(payload: TokenPayload): string;
   verifyAccessToken(token: string): TokenPayload;
   verifyRefreshToken(token: string): TokenPayload;
+  getRefreshTokenExpiry(): Date;
 }
