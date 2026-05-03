@@ -14,6 +14,8 @@ import { HomePage, homeLoader } from "./routes/home";
 import { SessionsPage } from "./routes/sessions";
 import type { User } from "./stores/auth.store";
 import { useAuthStore } from "./stores/auth.store";
+import { isTokenExpired } from "./lib/jwt";
+import { refreshFn } from "./api/auth.functions";
 
 export const loginSearchSchema = z.object({
   message: z.string().optional(),
@@ -44,21 +46,14 @@ export interface AuthLoaderData {
 }
 
 async function loadAuthSession(): Promise<AuthLoaderData> {
+  const authState = useAuthStore.getState();
+  if (authState.accessToken && !isTokenExpired(authState.accessToken)) {
+    return { accessToken: authState.accessToken, user: authState.user };
+  }
+
   try {
-    const response = await fetch("/api/token/refresh", {
-      method: "POST",
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      return { accessToken: null, user: null };
-    }
-
-    const data = await response.json();
-    return {
-      accessToken: data.accessToken,
-      user: data.user,
-    };
+    const data = await refreshFn();
+    return { accessToken: data.accessToken, user: data.user };
   } catch {
     return { accessToken: null, user: null };
   }
