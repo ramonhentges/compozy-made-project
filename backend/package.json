@@ -4,7 +4,7 @@
   "description": "DDD + Clean Architecture + Hexagonal Architecture backend",
   "main": "dist/main/index.js",
   "scripts": {
-    "dev": "ts-node -r tsconfig-paths/register src/main/index.ts",
+    "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/main/index.ts",
     "build": "tsc",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -40,6 +40,7 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.9",
     "@vitest/coverage-v8": "^1.6.1",
+    "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.4.5",
