@@ -121,6 +121,8 @@ async function createServer(): Promise<FastifyInstance> {
     7 * 24 * 60 * 60 * 1000,
   );
 
+  console.log({ cookieConfig });
+
   await fastify.register(
     async (instance) => {
       await instance.register(identityRoutes, {

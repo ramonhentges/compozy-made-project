@@ -20,7 +20,7 @@ export function buildRefreshTokenCookieConfig(
     sameSite,
     path: '/',
     maxAge: maxAgeMs,
-    partitioned: true,
+    partitioned: secure,
   };
 }
 
