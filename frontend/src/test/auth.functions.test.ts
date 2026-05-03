@@ -259,15 +259,25 @@ describe('auth.functions', () => {
       expect(result).toEqual(mockResponse);
     });
 
-    it('throws AuthError on list sessions failure', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-        statusText: 'Unauthorized',
-        json: () => Promise.resolve({ message: 'Not authenticated' }),
-      } as Response);
+    it('throws AuthError on list sessions failure after refresh also fails', async () => {
+      useAuthStore.getState().setAuth('old-token', { id: '1', email: 'test@example.com', name: 'Test User' });
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          statusText: 'Unauthorized',
+          json: () => Promise.resolve({ message: 'Not authenticated' }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          statusText: 'Unauthorized',
+          json: () => Promise.resolve({ message: 'Refresh token expired' }),
+        } as Response);
 
       await expect(listSessionsFn()).rejects.toThrow(AuthError);
+      expect(useAuthStore.getState().accessToken).toBeNull();
     });
   });
 
@@ -298,6 +308,109 @@ describe('auth.functions', () => {
       } as Response);
 
       await expect(revokeSessionFn('sess-unknown')).rejects.toThrow(AuthError);
+    });
+  });
+
+  describe('401 auto-retry', () => {
+    it('should retry original request after successful token refresh', async () => {
+      useAuthStore.getState().setAuth('old-token', { id: '1', email: 'test@example.com', name: 'Test User' });
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: () => Promise.resolve({ message: 'Unauthorized' }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ accessToken: 'new-token', user: { id: '1', email: 'test@example.com', name: 'Test User' } }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ sessions: [{ id: 'sess-1', deviceInfo: 'Chrome', createdAt: '2024-01-01T00:00:00Z', lastUsedAt: null, expiresAt: '2024-02-01T00:00:00Z', isCurrent: true }] }),
+        } as Response);
+
+      const result = await listSessionsFn();
+
+      expect(result.sessions).toHaveLength(1);
+      expect(useAuthStore.getState().accessToken).toBe('new-token');
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('should clear auth store when refresh fails on 401', async () => {
+      useAuthStore.getState().setAuth('old-token', { id: '1', email: 'test@example.com', name: 'Test User' });
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: () => Promise.resolve({ message: 'Unauthorized' }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: () => Promise.resolve({ message: 'Refresh token expired' }),
+        } as Response);
+
+      await expect(listSessionsFn()).rejects.toThrow(AuthError);
+      expect(useAuthStore.getState().accessToken).toBeNull();
+      expect(useAuthStore.getState().user).toBeNull();
+    });
+
+    it('should not fire multiple refresh requests for simultaneous 401s', async () => {
+      useAuthStore.getState().setAuth('old-token', { id: '1', email: 'test@example.com', name: 'Test User' });
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: () => Promise.resolve({ message: 'Unauthorized' }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: () => Promise.resolve({ message: 'Unauthorized' }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ accessToken: 'new-token', user: { id: '1', email: 'test@example.com', name: 'Test User' } }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ sessions: [] }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ sessions: [] }),
+        } as Response);
+
+      const [result1, result2] = await Promise.all([
+        listSessionsFn(),
+        listSessionsFn(),
+      ]);
+
+      expect(result1.sessions).toEqual([]);
+      expect(result2.sessions).toEqual([]);
+
+      const refreshCalls = mockFetch.mock.calls.filter(
+        (call) => (call[0] as string).includes('/token/refresh')
+      );
+      expect(refreshCalls).toHaveLength(1);
+    });
+
+    it('should not attempt refresh on login 401', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        json: () => Promise.resolve({ message: 'Invalid credentials' }),
+      } as Response);
+
+      await expect(
+        loginFn({ email: 'test@example.com', password: 'wrongpassword' })
+      ).rejects.toThrow('Invalid credentials');
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
     });
   });
 

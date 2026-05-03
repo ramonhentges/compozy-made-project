@@ -8,6 +8,7 @@ import {
 import { useAuthStore, type User } from "@/stores/auth.store";
 
 const API_BASE = "/api";
+const NO_REFRESH_ENDPOINTS = ["/login", "/register", "/token/refresh"];
 
 export class AuthError extends Error {
   constructor(
@@ -17,6 +18,33 @@ export class AuthError extends Error {
   ) {
     super(message);
     this.name = "AuthError";
+  }
+}
+
+let refreshPromise: Promise<AuthResponse> | null = null;
+
+async function doRefreshToken(): Promise<AuthResponse> {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    const res = await fetch(`${API_BASE}/token/refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      throw new AuthError("Session expired", "AUTH_ERROR", res.status);
+    }
+    const data = (await res.json()) as AuthResponse;
+    useAuthStore.getState().setAuth(data.accessToken, data.user);
+    return data;
+  })();
+
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
   }
 }
 
@@ -32,12 +60,28 @@ async function callApi<T>(
     headers["Authorization"] = `Bearer ${accessToken}`;
   }
 
-  const res = await fetch(`${API_BASE}${endpoint}`, {
+  const url = `${API_BASE}${endpoint}`;
+  const fetchOptions: RequestInit = {
     method: options.method ?? "POST",
     headers,
     credentials: "include",
     body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  };
+
+  let res = await fetch(url, fetchOptions);
+
+  if (res.status === 401 && !NO_REFRESH_ENDPOINTS.includes(endpoint)) {
+    try {
+      const refreshed = await doRefreshToken();
+      fetchOptions.headers = {
+        ...fetchOptions.headers,
+        Authorization: `Bearer ${refreshed.accessToken}`,
+      };
+      res = await fetch(url, fetchOptions);
+    } catch {
+      useAuthStore.getState().clearAuth();
+    }
+  }
 
   if (!res.ok) {
     let message = "Request failed";
@@ -78,7 +122,7 @@ export async function logoutFn(): Promise<void> {
 }
 
 export async function refreshFn(): Promise<AuthResponse> {
-  return callApi<AuthResponse>("/token/refresh");
+  return doRefreshToken();
 }
 
 export interface Session {
